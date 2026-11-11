@@ -272,21 +272,31 @@
 
   // ---------- Temas de temporada ----------
   const TEMAS = {
-    navidad: { fall: '❄️', badge: '🎄 Especial Navidad' },
-    halloween: { fall: '🦇', badge: '🎃 Especial Halloween' },
-    anionuevo: { fall: '✨', badge: '🎆 ¡Feliz Año Nuevo!' },
-    fiestaspatrias: { fall: '🇵🇪', badge: '🇵🇪 ¡Fiestas Patrias!' },
-    sanvalentin: { fall: '❤️', badge: '❤️ Entrena en pareja' }
+    navidad:        { promo: '🎄 Promo Navideña · 2×1 en inscripción, solo diciembre', n: 34, lights: true },
+    halloween:      { promo: '🎃 Reto Halloween · inscríbete y llévate 1 semana gratis', n: 30 },
+    anionuevo:      { promo: '🎆 Año Nuevo, nueva versión de ti · 20% en planes anuales', n: 30 },
+    fiestaspatrias: { promo: '🇵🇪 Fiestas Patrias · plan 3 meses al precio de 2', n: 28 },
+    sanvalentin:    { promo: '❤️ Plan Pareja · entrena en dúo y paga menos', n: 26 }
   };
   function applyTema() {
-    const t = (data.config.tema || '').toLowerCase(), cfg = TEMAS[t];
-    document.documentElement.dataset.tema = cfg ? t : '';
-    $('#temaFall')?.remove(); $('#temaBadge')?.remove();
-    if (!cfg) return;
-    const ov = document.createElement('div'); ov.id = 'temaFall'; ov.setAttribute('aria-hidden', 'true');
-    let h = ''; for (let i = 0; i < 14; i++) h += `<span style="left:${(Math.random() * 100).toFixed(1)}%;animation-delay:${(Math.random() * 9).toFixed(2)}s;animation-duration:${(7 + Math.random() * 6).toFixed(2)}s;font-size:${(11 + Math.random() * 15) | 0}px">${cfg.fall}</span>`;
-    ov.innerHTML = h; document.body.appendChild(ov);
-    const b = document.createElement('div'); b.id = 'temaBadge'; b.textContent = cfg.badge; document.body.appendChild(b);
+    const t = (data.config.tema || '').toLowerCase(), cfg = TEMAS[t], root = document.documentElement;
+    root.dataset.tema = cfg ? t : '';
+    $('#temaDeco')?.remove(); $('#temaRibbon')?.remove(); $('#temaLights')?.remove(); $('#temaFall')?.remove(); $('#temaBadge')?.remove();
+    if (!cfg) { root.removeAttribute('data-ribbon'); return; }
+    const deco = document.createElement('div'); deco.id = 'temaDeco'; deco.setAttribute('aria-hidden', 'true');
+    let pt = '';
+    for (let i = 0; i < cfg.n; i++) {
+      const s = (7 + Math.random() * 16) | 0, x = ((Math.random() * 2 - 1) * 60) | 0, r = ((Math.random() * 2 - 1) * 220) | 0;
+      pt += `<span class="pt" style="left:${(Math.random() * 100).toFixed(1)}%;--s:${s}px;--d:${(8 + Math.random() * 9).toFixed(1)}s;--dl:${(Math.random() * 10).toFixed(1)}s;--xd:${x}px;--rd:${r}deg;--o:${(0.45 + Math.random() * 0.45).toFixed(2)}"></span>`;
+    }
+    deco.innerHTML = `<div class="glow"></div>${pt}`;
+    document.body.appendChild(deco);
+    if (cfg.lights) { const lg = document.createElement('div'); lg.id = 'temaLights'; lg.setAttribute('aria-hidden', 'true'); document.body.appendChild(lg); }
+    const rib = document.createElement('div'); rib.id = 'temaRibbon';
+    rib.innerHTML = `<b>${esc(cfg.promo)}</b><button class="x" aria-label="Cerrar">×</button>`;
+    rib.querySelector('.x').addEventListener('click', () => { rib.remove(); root.removeAttribute('data-ribbon'); });
+    document.body.appendChild(rib);
+    root.setAttribute('data-ribbon', '');
   }
 
   // ---------- Router ----------

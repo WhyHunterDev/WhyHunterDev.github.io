@@ -422,20 +422,45 @@ footer a:hover{color:var(--y)}
 .flash{animation:flash .5s}
 @keyframes flash{50%{opacity:.35;transform:translateY(6px)}}
 
-/* ===== Temas de temporada (se activan desde el Gestor) ===== */
-#temaFall{position:fixed;inset:0;pointer-events:none;z-index:48;overflow:hidden}
-#temaFall span{position:absolute;top:-6%;will-change:transform;animation:temaFall linear infinite;opacity:.85;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))}
-@keyframes temaFall{0%{transform:translateY(-10vh) rotate(0)}100%{transform:translateY(110vh) rotate(340deg)}}
-#temaBadge{position:fixed;left:16px;bottom:88px;z-index:46;display:flex;align-items:center;gap:.5rem;background:var(--tgrad,#141414);color:#fff;border:1px solid rgba(255,255,255,.14);padding:.55rem .9rem;border-radius:999px;font-weight:700;font-size:.82rem;box-shadow:0 12px 30px rgba(0,0,0,.45);max-width:78vw;animation:badgeIn .5s var(--ease) both}
-@keyframes badgeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-@media(min-width:900px){#temaBadge{bottom:24px}}
-html[data-tema="navidad"]{--tgrad:linear-gradient(90deg,#c0392b,#1f9d55)}
-html[data-tema="navidad"] .marquee{background:linear-gradient(90deg,#c0392b,#1f9d55);color:#fff}
-html[data-tema="halloween"]{--tgrad:linear-gradient(90deg,#ff7518,#7b2ff7)}
-html[data-tema="halloween"] .marquee{background:linear-gradient(90deg,#ff7518,#7b2ff7);color:#fff}
-html[data-tema="anionuevo"]{--tgrad:linear-gradient(90deg,#b8860b,#f5c400)}
-html[data-tema="fiestaspatrias"]{--tgrad:linear-gradient(90deg,#d91023,#b00)}
+/* ===== Temas de temporada premium (se activan desde el Gestor) ===== */
+#temaDeco{position:fixed;inset:0;pointer-events:none;z-index:41;overflow:hidden}
+#temaDeco .glow{position:absolute;inset:-25%;opacity:.85;background:
+  radial-gradient(42% 52% at 10% 6%,var(--tg1,transparent),transparent 72%),
+  radial-gradient(46% 56% at 90% 96%,var(--tg2,transparent),transparent 72%)}
+#temaLights{position:fixed;top:var(--rh,36px);left:0;right:0;height:42px;z-index:60;pointer-events:none;background-repeat:repeat-x;background-position:top center;background-size:190px 42px;animation:temaTwinkle 2.8s steps(1,end) infinite;opacity:.95}
+@keyframes temaTwinkle{0%,100%{filter:brightness(1)}50%{filter:brightness(1.35)}}
+#temaDeco .pt{position:absolute;top:-10%;width:var(--s,12px);height:var(--s,12px);opacity:var(--o,.85);
+  background-repeat:no-repeat;background-position:center;background-size:contain;will-change:transform;
+  animation:temaDrift var(--d,11s) linear var(--dl,0s) infinite}
+@keyframes temaDrift{0%{transform:translate(0,-12vh) rotate(0deg)}100%{transform:translate(var(--xd,0px),112vh) rotate(var(--rd,0deg))}}
+/* promo ribbon */
+#temaRibbon{position:fixed;top:0;left:0;right:0;z-index:62;display:flex;align-items:center;justify-content:center;gap:.55rem;
+  min-height:var(--rh,36px);padding:.42rem 2.6rem;text-align:center;font-weight:700;font-size:.82rem;line-height:1.25;
+  color:var(--trtx,#fff);background:var(--trbg,linear-gradient(90deg,#b11226,#146b3a));
+  box-shadow:0 8px 24px rgba(0,0,0,.38);overflow:hidden;animation:ribIn .55s var(--ease) both}
+#temaRibbon::before{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 32%,rgba(255,255,255,.4) 50%,transparent 68%);transform:translateX(-130%);animation:temaShine 5s ease-in-out infinite}
+#temaRibbon b{font-weight:900;white-space:nowrap}
+#temaRibbon .x{position:absolute;right:.55rem;top:50%;transform:translateY(-50%);background:none;border:0;color:inherit;opacity:.75;font-size:1.1rem;line-height:1;cursor:pointer;padding:.2rem .3rem;pointer-events:auto}
+#temaRibbon .x:hover{opacity:1}
+@keyframes ribIn{from{transform:translateY(-100%)}to{transform:none}}
+@keyframes temaShine{0%,55%{transform:translateX(-130%)}100%{transform:translateX(130%)}}
+html[data-ribbon] .nav{top:var(--rh,36px)}
+/* ---- paletas por tema ---- */
+html[data-tema="navidad"]{--tg1:rgba(31,157,85,.26);--tg2:rgba(192,57,43,.24);--trbg:linear-gradient(90deg,#b11226,#146b3a);--trtx:#fff;--tema-acc:#2fb36b}
+html[data-tema="navidad"] .marquee{background:linear-gradient(90deg,#b11226,#146b3a);color:#fff}
+#temaLights{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='46' viewBox='0 0 200 46'%3E%3Cpath d='M0 8 Q50 34 100 8 T200 8' fill='none' stroke='%23caa64a' stroke-width='2'/%3E%3Cg%3E%3Ccircle cx='25' cy='23' r='5' fill='%23e23b3b'/%3E%3Ccircle cx='60' cy='20' r='5' fill='%232fb36b'/%3E%3Ccircle cx='100' cy='24' r='5' fill='%23f1c84b'/%3E%3Ccircle cx='140' cy='20' r='5' fill='%23e23b3b'/%3E%3Ccircle cx='175' cy='23' r='5' fill='%232fb36b'/%3E%3C/g%3E%3C/svg%3E")}
+html[data-tema="navidad"] #temaDeco .pt{background-image:radial-gradient(circle,#fff 12%,rgba(255,255,255,.4) 46%,transparent 70%);filter:blur(.3px)}
+html[data-tema="halloween"]{--tg1:rgba(123,47,247,.28);--tg2:rgba(255,117,24,.22);--trbg:linear-gradient(90deg,#2a0a3d,#ff7518);--trtx:#fff;--tema-acc:#ff7518}
+html[data-tema="halloween"] .marquee{background:linear-gradient(90deg,#2a0a3d,#ff7518);color:#fff}
+html[data-tema="halloween"] #temaDeco .pt{background-image:radial-gradient(circle,#ffc078 12%,rgba(255,140,0,.45) 50%,transparent 72%);filter:blur(.3px) drop-shadow(0 0 4px rgba(255,140,0,.5))}
+html[data-tema="anionuevo"]{--tg1:rgba(245,196,0,.22);--tg2:rgba(184,134,11,.2);--trbg:linear-gradient(90deg,#161616,#c9a227,#161616);--trtx:#ffe9a8;--tema-acc:#f1c84b}
+html[data-tema="anionuevo"] .marquee{background:linear-gradient(90deg,#161616,#c9a227,#161616);color:#ffe9a8}
+html[data-tema="anionuevo"] #temaDeco .pt{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f1c84b' d='M12 0l2.4 9.6L24 12l-9.6 2.4L12 24l-2.4-9.6L0 12l9.6-2.4z'/%3E%3C/svg%3E");filter:drop-shadow(0 0 3px rgba(241,200,75,.6))}
+html[data-tema="fiestaspatrias"]{--tg1:rgba(217,16,35,.24);--tg2:rgba(170,0,0,.18);--trbg:linear-gradient(90deg,#d91023,#fff,#d91023);--trtx:#b00020;--tema-acc:#d91023}
 html[data-tema="fiestaspatrias"] .marquee{background:linear-gradient(90deg,#d91023,#fff,#d91023);color:#111}
-html[data-tema="sanvalentin"]{--tgrad:linear-gradient(90deg,#ff4d6d,#ff8fa3)}
+html[data-tema="fiestaspatrias"] #temaDeco .pt{background-image:linear-gradient(#fff,#fff);border-radius:2px}
+html[data-tema="fiestaspatrias"] #temaDeco .pt:nth-child(odd){background-image:linear-gradient(#d91023,#d91023)}
+html[data-tema="sanvalentin"]{--tg1:rgba(255,77,109,.24);--tg2:rgba(255,143,163,.22);--trbg:linear-gradient(90deg,#ff4d6d,#ff8fa3);--trtx:#fff;--tema-acc:#ff5d7e}
 html[data-tema="sanvalentin"] .marquee{background:linear-gradient(90deg,#ff4d6d,#ff8fa3);color:#fff}
-@media(prefers-reduced-motion:reduce){#temaFall{display:none}}
+html[data-tema="sanvalentin"] #temaDeco .pt{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ff5d7e' d='M12 21s-8-5.3-8-11a4.4 4.4 0 0 1 8-2.7A4.4 4.4 0 0 1 20 10c0 5.7-8 11-8 11z'/%3E%3C/svg%3E");filter:drop-shadow(0 0 3px rgba(255,93,126,.5))}
+@media(prefers-reduced-motion:reduce){#temaDeco .pt,#temaRibbon::before,#temaLights{animation:none}#temaDeco .pt{display:none}}
