@@ -178,7 +178,7 @@
     ['General', [['resumen', '📊', 'Resumen', 'all']]],
     ['Página web', [['contenido', '🎨', 'Contenido de inicio', 'admin'], ['planes', '💳', 'Planes y precios', 'admin'], ['sedes', '📍', 'Sedes', 'admin']]],
     ['Publicar', [['promos', '📣', 'Promos y eventos', 'admin,recepcion'], ['galeria', '🎬', 'Galería', 'admin,recepcion'], ['clases', '🗓️', 'Horario de clases', 'admin,recepcion'], ['coaches', '🏋️', 'Entrenadores', 'admin'], ['cafetin', '🥤', 'Cafetín', 'admin,cafetin']]],
-    ['Equipo', [['usuarios', '👥', 'Usuarios', 'admin'], ['actividad', '🕑', 'Actividad', 'admin']]],
+    ['Equipo', [['usuarios', '👥', 'Usuarios', 'admin'], ['actividad', '🕑', 'Actividad', 'admin'], ['reclamos', '📕', 'Libro de reclamaciones', 'admin']]],
     ['Ayuda', [['guia', '📘', 'Guía de uso', 'all'], ['cuenta', '🔑', 'Mi cuenta', 'all']]]
   ];
   const can = (r) => r === 'all' || r.split(',').includes(me.rol);
@@ -326,6 +326,7 @@
       await blk('c5', '🎬 Encabezado de videos', 'El título sobre el carrusel de videos.', c, [['videos.eyebrow', 'Texto pequeño', 'text'], ['videos.titulo', 'Título', 'text'], ['videos.acento', 'Palabra resaltada', 'text'], ['videos.texto', 'Descripción', 'area']]) +
       await blk('c6', '✅ Qué incluye tu plan', 'Beneficios que se muestran en Planes.', c, [['incluye', 'Beneficios', 'rows', { cols: 'i,t,d', rows: 8, hint: 'Uno por línea: Emoji | Título | Descripción' }]]) +
       await blk('c7', '🔗 Redes sociales', 'Enlaces del pie de página.', c, [['redes.instagram', 'Instagram', 'url'], ['redes.tiktok', 'TikTok', 'url'], ['redes.facebook', 'Facebook', 'url']]) +
+      await blk('c9', '⚖️ Datos legales', 'Salen en el Libro de Reclamaciones, la política de privacidad y los términos. Son obligatorios para cumplir la ley.', c, [['legal.razon', 'Razón social', 'text', { hint: 'Como figura en SUNAT. Ej.: Santos Strength S.A.C.' }], ['legal.ruc', 'RUC', 'text', { max: 11 }], ['legal.direccion', 'Dirección fiscal', 'text', { full: 1 }], ['legal.email', 'Correo para reclamos y datos personales', 'email']]) +
       await blk('c8', '🛡️ Aprobación', 'Si lo activas, lo que suban recepción y cafetín espera tu visto bueno antes de salir.', c, [['aprobacion', 'Revisar publicaciones antes de mostrarlas', 'bool']]) +
       (temasPermitidosDe(c).length ? temaSec(c) : '');
   };
@@ -365,6 +366,25 @@
         <label>Rol${sel(ROLES, 'recepcion', 'id="cuR"')}</label><label>Sede${sel(sedeOpts2, 'todas', 'id="cuS"')}</label></form>
         <button class="btn btn-y" data-cnew style="margin-top:14px">Crear cuenta con clave temporal</button></div>`;
   };
+  V.reclamos = async () => {
+    const sub = 'Reclamos y quejas que dejan en la web. La ley te da 15 días hábiles para responder.';
+    if (!B()) return title('Libro de reclamaciones', sub) + '<div class="panel"><p class="d">Disponible cuando la web está conectada a la nube.</p></div>';
+    let list = [], err = false;
+    try { const sid = await B().idDe(); const r = await B().sb.from('reclamos').select('*').eq('sitio_id', sid).order('creado', { ascending: false }).limit(200); if (r.error) throw r.error; list = r.data || []; } catch (_) { err = true; }
+    if (err) return title('Libro de reclamaciones', sub) + '<div class="panel"><p class="d">Aún no está activado. Pide a soporte que lo active.</p></div>';
+    const habiles = (d) => { let n = 0; const x = new Date(d), hoy = new Date(); while (x < hoy) { x.setDate(x.getDate() + 1); const w = x.getDay(); if (w && w !== 6) n++; } return n; };
+    const pend = list.filter((r) => r.estado !== 'respondido').length;
+    const card = (r) => { const dias = habiles(r.creado), tarde = r.estado !== 'respondido' && dias > 12;
+      return `<details class="panel" ${r.estado !== 'respondido' ? 'open' : ''}><summary>${r.tipo === 'queja' ? '🗣️ Queja' : '📕 Reclamo'} N.º ${esc(r.codigo)} · ${esc(r.nombre)} <span class="role ${r.estado === 'respondido' ? 'admin' : 'recepcion'}">${r.estado === 'respondido' ? 'Respondido' : (tarde ? '⚠️ ' : '') + 'Pendiente · ' + dias + ' de 15 días'}</span></summary>
+        <p class="d">${new Date(r.creado).toLocaleString('es-PE')} · Sede: ${esc(r.sede || '—')} · ${esc(r.bien)}${r.monto ? ' · S/ ' + esc(r.monto) : ''}</p>
+        <p style="font-size:.88rem;line-height:1.55"><b>Cliente:</b> ${esc(r.nombre)} · ${esc(r.documento)} · ${esc(r.telefono)} · ${esc(r.email)}${r.domicilio ? ' · ' + esc(r.domicilio) : ''}${r.menor ? ' · Menor de edad, apoderado: ' + esc(r.apoderado) : ''}<br>
+        <b>Qué contrató:</b> ${esc(r.descripcion || '—')}<br><b>Detalle:</b> ${esc(r.detalle)}<br><b>Pedido:</b> ${esc(r.pedido || '—')}</p>
+        <label style="display:block;margin-top:10px;font-size:.84rem">Respuesta al cliente<textarea data-recresp="${r.id}" rows="3" style="width:100%;margin-top:6px">${esc(r.respuesta || '')}</textarea></label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn btn-y btn-sm" data-recsave="${r.id}">Guardar respuesta</button>${r.email ? `<a class="btn btn-g btn-sm" href="mailto:${esc(r.email)}?subject=${encodeURIComponent('Respuesta a su ' + r.tipo + ' N.º ' + r.codigo)}">Enviar por correo</a>` : ''}${r.telefono ? `<a class="btn btn-g btn-sm" target="_blank" rel="noopener" href="https://wa.me/51${esc(String(r.telefono).replace(/\D/g, '').slice(-9))}">WhatsApp</a>` : ''}</div></details>`; };
+    return title('Libro de reclamaciones', sub) + `<div class="grid4"><div class="kpi"><b>${pend}</b><small>Pendientes</small></div><div class="kpi"><b>${list.length}</b><small>Total</small></div></div>` +
+      (list.map(card).join('') || '<div class="panel"><p class="d">No hay reclamos. 🎉</p></div>') +
+      '<p class="hint" style="margin-top:10px">Responde por correo o WhatsApp y guarda aquí la respuesta como constancia. Además, cada sede debe tener su libro físico y el aviso visible.</p>';
+  };
   V.actividad = async () => {
     let list = data.actividad || [];
     if (B()) { try { const sid = await B().idDe(); const r = await B().sb.from('actividad').select('quien,que,t').eq('sitio_id', sid).order('t', { ascending: false }).limit(150); list = r.data || []; } catch (_) { list = []; } }
@@ -380,7 +400,7 @@
       recepcion: [['Publica promos y eventos', 'Promos y eventos → Agregar. Ponle foto, fechas y listo: sale en la web al instante.'], ['Se ocultan solas', 'Al pasar la fecha «Hasta», la promo desaparece de la web. No tienes que borrarla.'], ['Sube fotos y videos', 'Galería → Agregar. Se guardan ordenados por categoría y no llenan la página.'], ['Videos para la portada', 'Marca «Mostrar en la portada» para que salga en el carrusel de inicio.'], ['Responde el WhatsApp', 'Los mensajes de la web llegan al WhatsApp de tu sede.']],
       cafetin: [['Actualiza el stock', 'Cafetín → botón Disponible / Agotado en cada producto.'], ['Nuevo producto', 'Agregar producto: foto, precio, proteína, calorías y en qué sedes hay.'], ['Combos', 'Pestaña Combos: precio combo, precio normal y hasta cuándo vale.'], ['Portada del cafetín', 'Cambia el título, texto y la foto grande del cafetín.']]
     };
-    const comun = [['Seguridad', 'Tras 5 intentos fallidos la cuenta se bloquea 5 minutos. La sesión se cierra sola tras 15 minutos sin uso.'], ['Fotos', 'Usa fotos con buena luz. El sistema las optimiza para que la web cargue rápido.']];
+    const comun = [['Seguridad', 'Tras 5 intentos fallidos la cuenta se bloquea 5 minutos. La sesión se cierra sola tras 1 hora sin uso.'], ['Fotos', 'Usa fotos con buena luz. El sistema las optimiza para que la web cargue rápido.']];
     return title('Guía de uso', 'Pasos simples para tu rol.') + `<div class="guide">${[...G[me.rol], ...comun].map(([h, p], i) => `<div class="step"><span class="n">${i + 1}</span><div><h4>${esc(h)}</h4><p>${esc(p)}</p></div></div>`).join('')}</div>`;
   };
 
@@ -447,6 +467,9 @@
       if ('cnew' in d) { const fm = $('#cuf'); if (!fm.reportValidity()) return; const nombre = $('#cuN').value.trim(), email = $('#cuE').value.trim().toLowerCase(), pass = genClave();
         const { error } = await B().sb.rpc('gestor_crear_usuario', { p_slug: B().sitio, p_email: email, p_pass: pass, p_nombre: nombre, p_rol: $('#cuR').value, p_sede: $('#cuS').value }); if (error) throw error;
         log(`creó la cuenta de ${nombre}`); claveNueva = { nombre, email, pass, nuevo: true }; toast('Cuenta creada ✓'); return go(view); }
+      if (d.recsave) { const txt = $(`[data-recresp="${d.recsave}"]`).value.trim(); if (!txt) return toast('Escribe la respuesta');
+        const { error } = await B().sb.from('reclamos').update({ respuesta: txt, estado: 'respondido', respondido: new Date().toISOString() }).eq('id', +d.recsave); if (error) throw error;
+        log('respondió un reclamo'); toast('Respuesta guardada ✓'); return go(view); }
       if (d.crest) { if (!confirm(`¿Darle una clave nueva a ${d.n}? Se cerrarán sus sesiones abiertas.`)) return; const pass = genClave();
         const { error } = await B().sb.rpc('gestor_reiniciar_clave', { p_user: d.crest, p_pass: pass }); if (error) throw error;
         log(`reinició la clave de ${d.n}`); claveNueva = { nombre: d.n, email: d.e, pass }; toast('Clave reiniciada ✓'); return go(view); }

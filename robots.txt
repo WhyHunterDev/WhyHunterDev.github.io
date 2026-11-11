@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /gestor/
+
+Sitemap: https://whyhunterdev.github.io/santos-strength/sitemap.xml

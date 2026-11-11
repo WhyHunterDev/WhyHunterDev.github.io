@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Libro de Reclamaciones · Santos Strength</title>
+<meta name="description" content="Libro de Reclamaciones virtual de Santos Strength, conforme al Código de Protección y Defensa del Consumidor.">
+<link rel="icon" href="img/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/legal.css?v=2">
+</head>
+<body>
+<header class="top"><div class="w"><a class="brand" href="./"><img src="img/logo.png" alt="">SANTOS <b>STRENGTH</b></a><a href="./">← Volver</a></div></header>
+<main class="w">
+  <h1>Libro de <em>Reclamaciones</em></h1>
+  <p class="lead">Conforme al Código de Protección y Defensa del Consumidor (Ley N.º 29571), este establecimiento cuenta con un Libro de Reclamaciones a tu disposición.</p>
+  <div class="box"><p><b data-l="razon"></b> · RUC <span data-l="ruc"></span></p><p data-l="direccion"></p><p>Fecha: <span id="rFecha"></span></p></div>
+
+  <div id="rOk" hidden></div>
+  <form id="rForm">
+    <fieldset>
+      <legend>1. Tus datos</legend>
+      <label class="full">Nombre completo *<input id="rNombre" required maxlength="120" autocomplete="name"></label>
+      <label>DNI / CE *<input id="rDoc" required maxlength="20" inputmode="numeric"></label>
+      <label>Teléfono *<input id="rTel" required maxlength="20" inputmode="tel" autocomplete="tel"></label>
+      <label class="full">Domicilio<input id="rDom" maxlength="200" autocomplete="street-address"></label>
+      <label class="full">Correo electrónico *<input id="rEmail" type="email" required maxlength="120" autocomplete="email"></label>
+      <label class="ck full"><input type="checkbox" id="rMenor"> Soy menor de edad</label>
+      <label class="full" id="rApoWrap" hidden>Nombre del padre, madre o apoderado *<input id="rApo" maxlength="120"></label>
+    </fieldset>
+    <fieldset>
+      <legend>2. Lo que contrataste</legend>
+      <div class="opts full"><label><input type="radio" name="bien" value="servicio" checked> Servicio (membresía, clase, pase)</label><label><input type="radio" name="bien" value="producto"> Producto (cafetín u otro)</label></div>
+      <label>Sede *<select id="rSede" required></select></label>
+      <label>Monto (S/)<input id="rMonto" inputmode="decimal" maxlength="20"></label>
+      <label class="full">Descripción<input id="rDesc" maxlength="300" placeholder="Ej.: Plan 3 meses, batido de proteína"></label>
+    </fieldset>
+    <fieldset>
+      <legend>3. Detalle</legend>
+      <div class="opts full"><label><input type="radio" name="tipo" value="reclamo" checked> <span><b>Reclamo:</b> disconformidad con el producto o servicio</span></label><label><input type="radio" name="tipo" value="queja"> <span><b>Queja:</b> malestar por la atención</span></label></div>
+      <label class="full">Detalle *<textarea id="rDetalle" required rows="5" maxlength="3000"></textarea></label>
+      <label class="full">¿Qué solicitas? (pedido)<textarea id="rPedido" rows="3" maxlength="1500"></textarea></label>
+    </fieldset>
+    <label class="ck"><input type="checkbox" id="rAcepto"> <span>Declaro que los datos son verdaderos y acepto que se usen para atender este reclamo, según la <a href="privacidad.html" target="_blank">Política de Privacidad</a>.</span></label>
+    <p class="err" id="rErr" hidden></p>
+    <button type="submit" id="rBtn">Enviar</button>
+    <p class="lead" style="font-size:.84rem">La formulación del reclamo no impide acudir a otras vías de solución de controversias ni es requisito previo para interponer una denuncia ante el INDECOPI. El proveedor debe responder en un plazo no mayor a 15 días hábiles.</p>
+  </form>
+</main>
+<footer><a href="./">Inicio</a><a href="privacidad.html">Privacidad</a><a href="terminos.html">Términos</a></footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="backend/conexion.js?v=12"></script>
+<script src="js/legal.js?v=1"></script>
+</body>
+</html>
