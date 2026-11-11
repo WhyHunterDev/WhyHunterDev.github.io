@@ -271,8 +271,15 @@
     return title('Cafetín', 'Usa «Disponible / Agotado» para actualizar el stock en un toque.') + (editing ? '' : tabs) + await crudList(DEF);
   };
   const TEMAS_UI = [['', 'Normal (sin tema)'], ['navidad', '🎄 Navidad'], ['halloween', '🎃 Halloween'], ['anionuevo', '🎆 Año Nuevo'], ['fiestaspatrias', '🇵🇪 Fiestas Patrias'], ['sanvalentin', '❤️ San Valentín']];
+  function temasPermitidosDe(c) {
+    if (c.temasPermitidos && c.temasPermitidos.length) return c.temasPermitidos;
+    if (c.temaExtra) return ['navidad', 'halloween', 'anionuevo', 'fiestaspatrias', 'sanvalentin'];
+    return [];
+  }
   function temaSec(c) {
-    const cur = c.tema || '', opts = TEMAS_UI.map(([v, n]) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${n}</option>`).join('');
+    const permitidos = temasPermitidosDe(c), cur = c.tema || '';
+    const lista = TEMAS_UI.filter(([v]) => v === '' || permitidos.includes(v));
+    const opts = lista.map(([v, n]) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${n}</option>`).join('');
     return `<details class="panel"><summary>🎉 Tema de temporada</summary><p class="d">Dale a tu web un diseño especial por fechas (nieve, luces, colores) y escribe tu promoción. Cámbialo cuando quieras.</p>
       <div id="ctema" class="form">
         <label>Temporada<select data-k="tema">${opts}</select></label>
@@ -292,7 +299,7 @@
       await blk('c6', '✅ Qué incluye tu plan', 'Beneficios que se muestran en Planes.', c, [['incluye', 'Beneficios', 'rows', { cols: 'i,t,d', rows: 8, hint: 'Uno por línea: Emoji | Título | Descripción' }]]) +
       await blk('c7', '🔗 Redes sociales', 'Enlaces del pie de página.', c, [['redes.instagram', 'Instagram', 'url'], ['redes.tiktok', 'TikTok', 'url'], ['redes.facebook', 'Facebook', 'url']]) +
       await blk('c8', '🛡️ Aprobación', 'Si lo activas, lo que suban recepción y cafetín espera tu visto bueno antes de salir.', c, [['aprobacion', 'Revisar publicaciones antes de mostrarlas', 'bool']]) +
-      (c.temaExtra ? temaSec(c) : '');
+      (temasPermitidosDe(c).length ? temaSec(c) : '');
   };
   V.planes = async () => title('Planes y precios', 'Para un descuento por evento, llena «Precio evento» y su fecha final. Al vencer vuelve al precio normal.') +
     (await Promise.all(data.planes.map(async (p, i) => `<div class="panel"><h3>${esc(p.nombre)}</h3>${await form(p, [['nombre', 'Nombre', 'text'], ['meses', 'Meses', 'num'], ['precio', 'Precio normal (S/)', 'num'], ['destacado', 'Recomendado', 'bool'], ['precioEvento', 'Precio evento (S/)', 'num'], ['eventoTexto', 'Nombre del evento', 'text', { hint: 'Ej.: Black Friday' }], ['eventoHasta', 'Evento hasta', 'date']], 'pl' + i)}<div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-y" data-saveplan="${i}">Guardar</button><button class="btn btn-bad btn-sm" data-delplan="${i}" style="margin-left:auto">Eliminar plan</button></div></div>`))).join('') +

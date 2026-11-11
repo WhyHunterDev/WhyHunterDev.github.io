@@ -196,6 +196,16 @@ async function setExtra(slug,on){
   const conf=(c&&c.valor)||{}; conf.temaExtra=on;
   const {error:e2}=await sb.from('contenido').upsert({sitio_id:s.id,clave:'config',valor:conf}); if(e2)throw e2;
 }
+async function toggleTemaPermitido(slug,tema){
+  const {data:s,error:e1}=await sb.from('sitios').select('id').eq('slug',slug).maybeSingle(); if(e1)throw e1;
+  if(!s)throw new Error('No encuentro el sitio «'+slug+'». Revisa la URL de la web.');
+  const {data:c}=await sb.from('contenido').select('valor').eq('sitio_id',s.id).eq('clave','config').maybeSingle();
+  const conf=(c&&c.valor)||{}; const arr=new Set(conf.temasPermitidos||[]);
+  const ahora=arr.has(tema); if(ahora)arr.delete(tema); else arr.add(tema);
+  conf.temasPermitidos=[...arr]; conf.temaExtra=conf.temasPermitidos.length>0;
+  const {error:e2}=await sb.from('contenido').upsert({sitio_id:s.id,clave:'config',valor:conf}); if(e2)throw e2;
+  return !ahora;
+}
 async function setMantenimiento(slug,on,titulo,msg){
   const {data:s,error:e1}=await sb.from('sitios').select('id').eq('slug',slug).maybeSingle(); if(e1)throw e1;
   if(!s)throw new Error('No encuentro el sitio «'+slug+'». Revisa la URL de la web.');
@@ -325,14 +335,15 @@ function estadisticasPanel(info){
 function estadoPanel(cl,cf){
   const pago=cl.pago==='pagado'?'<b style="color:var(--ok)">✅ Pagado</b>':'<b style="color:var(--warn)">🟠 Por cobrar</b>';
   const tema=cf?(TEMA_NOM[cf.tema||'']||cf.tema):'<span style="color:var(--mu)">—</span>';
-  const extra=cf&&cf.temaExtra?'<b style="color:var(--ok)">✅ Activa</b>':'<span style="color:var(--mu)">— Desactivada</span>';
+  const nTemas=((cf&&cf.temasPermitidos)||[]).length;
+  const extra=nTemas?`<b style="color:var(--ok)">✅ ${nTemas} tema${nTemas>1?'s':''}</b>`:'<span style="color:var(--mu)">— Ninguno</span>';
   const web=cf&&cf.mantenimiento?'<b style="color:var(--warn)">🛠️ En mantenimiento</b>':'<b style="color:var(--ok)">✅ En vivo</b>';
   const box='background:#0e0e12;border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:150px;flex:1';
   return`<div class="panel"><h3>Estado del cliente</h3><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
     <div style="${box}"><small style="color:var(--mu)">Pago</small><div style="margin-top:3px">${pago}</div></div>
     <div style="${box}"><small style="color:var(--mu)">Estado de la web</small><div style="margin-top:3px">${web}</div></div>
     <div style="${box}"><small style="color:var(--mu)">Tema activo</small><div style="margin-top:3px"><b>${tema}</b></div></div>
-    <div style="${box}"><small style="color:var(--mu)">Edición de temas (extra)</small><div style="margin-top:3px">${extra}</div></div>
+    <div style="${box}"><small style="color:var(--mu)">Temas desbloqueados</small><div style="margin-top:3px">${extra}</div></div>
   </div></div>`;
 }
 async function verPanel(cl){
@@ -341,7 +352,7 @@ async function verPanel(cl){
   let cf=null, estErr=false, info=null; try{ info=await leerSitio(slug); cf=info?info.config:null; }catch(_){ estErr=true; }
   const estado = slug ? (estErr?'<div class="panel"><h3>Estado del cliente</h3><div class="note">No pude leer el estado de la web ahora. Revisa la URL o inténtalo de nuevo.</div></div>':(estadoPanel(cl,cf)+(info?estadisticasPanel(info):''))) : '';
   return estado+`<div class="panel"><h3>Tema de la web <span class="tag x">Extra · cóbralo</span></h3><p class="d">Cambia el look de temporada de la web de este cliente al instante. Ideal para vender como adicional.</p>
-    ${slug?`<div class="temas">${TEMAS.map(([k,n,emo])=>`<button class="tema" data-tema="${esc(slug)}:${esc(k)}"><b>${emo}</b> ${esc(n)}</button>`).join('')}</div><label style="display:block;margin-top:14px;color:var(--mu);font-size:.8rem;font-weight:600">Texto del banner de promo (opcional)<input id="promoTxt" type="text" maxlength="90" placeholder="Ej: 2×1 en inscripción solo diciembre" style="margin-top:5px"></label><button class="tema save" data-savepromo="${esc(slug)}" style="margin-top:10px">💾 Guardar texto de promo</button><p class="d" style="margin-top:6px">Déjalo vacío para usar el texto por defecto de cada temporada.</p><div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px"><h4 style="font-size:.92rem;margin-bottom:4px">Autonomía del cliente <span class="tag x">Vende el extra</span></h4><p class="d">Si lo activas, el cliente podrá cambiar el tema y el texto desde su propio panel, sin pedírtelo.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="tema" data-extra="${esc(slug)}:1">✅ Activar para el cliente</button><button class="tema" data-extra="${esc(slug)}:0">🚫 Desactivar</button></div></div>`:'<div class="note">Pon la <b>URL de la web</b> del cliente arriba y guarda, para poder aplicar temas.</div>'}</div>
+    ${slug?`<div class="temas">${TEMAS.map(([k,n,emo])=>`<button class="tema" data-tema="${esc(slug)}:${esc(k)}"><b>${emo}</b> ${esc(n)}</button>`).join('')}</div><label style="display:block;margin-top:14px;color:var(--mu);font-size:.8rem;font-weight:600">Texto del banner de promo (opcional)<input id="promoTxt" type="text" maxlength="90" placeholder="Ej: 2×1 en inscripción solo diciembre" style="margin-top:5px"></label><button class="tema save" data-savepromo="${esc(slug)}" style="margin-top:10px">💾 Guardar texto de promo</button><p class="d" style="margin-top:6px">Déjalo vacío para usar el texto por defecto de cada temporada.</p><div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px"><h4 style="font-size:.92rem;margin-bottom:4px">Temas que puede usar el cliente <span class="tag x">Cobra por cada uno</span></h4><p class="d">Activa los temas que el cliente pagó. Solo esos le aparecerán en su panel para ponerlos él mismo cuando quiera.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${TEMAS.filter(([k])=>k).map(([k,n,emo])=>{const on=((cf&&cf.temasPermitidos)||[]).includes(k);return `<button class="tema${on?' save':''}" data-togtema="${esc(slug)}:${esc(k)}" style="${on?'border-color:var(--ok);color:var(--ok)':''}">${on?'✅':'➕'} ${emo} ${esc(n)}</button>`;}).join('')}</div></div>`:'<div class="note">Pon la <b>URL de la web</b> del cliente arriba y guarda, para poder aplicar temas.</div>'}</div>
     ${slug?`<div class="panel"><h3>Modo mantenimiento</h3><p class="d">Muestra una página de "volvemos pronto" mientras haces cambios. Actívalo, trabaja tranquilo, y apágalo cuando esté listo.</p>
       <div style="margin-bottom:10px">Estado actual: ${cf&&cf.mantenimiento?'<b style="color:var(--warn)">🛠️ En mantenimiento</b>':'<b style="color:var(--ok)">✅ En vivo</b>'}</div>
       <label style="display:block;color:var(--mu);font-size:.8rem;font-weight:600">Título (opcional)<input id="mantTit" type="text" maxlength="60" value="${esc((cf&&cf.manto&&cf.manto.titulo)||'')}" placeholder="Estamos mejorando la web" style="margin-top:5px"></label>
@@ -431,7 +442,7 @@ document.addEventListener('click', async e=>{
     if(d.sop){ const c=clientes.find(x=>x.id===d.sop); if(cfg().soporteSinRegistro)touch(`Entró en modo soporte a ${c.negocio}`); return; }
     if(d.tema!==undefined){ const i=d.tema.indexOf(':'), slug=d.tema.slice(0,i), tema=d.tema.slice(i+1); el.disabled=true; try{ await aplicarTema(slug,tema); touch(`Aplicó el tema «${tema||'normal'}» a ${slug}`); toast('Tema aplicado ✓ La web cambia al recargar.'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
     if(d.savepromo!==undefined){ const promo=($('#promoTxt')?.value||'').trim(); el.disabled=true; try{ await guardarPromo(d.savepromo,promo); touch(`Editó el texto de promo de ${d.savepromo}`); toast(promo?'Texto guardado ✓ La web lo muestra al recargar.':'Listo ✓ Usará el texto por defecto.'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
-    if(d.extra!==undefined){ const j=d.extra.indexOf(':'), slug=d.extra.slice(0,j), on=d.extra.slice(j+1)==='1'; el.disabled=true; try{ await setExtra(slug,on); touch(`${on?'Activó':'Desactivó'} el extra de temas para ${slug}`); toast(on?'Extra activado ✓ El cliente ya puede editar su tema.':'Extra desactivado.'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
+    if(d.togtema!==undefined){ const j=d.togtema.indexOf(':'), slug=d.togtema.slice(0,j), tema=d.togtema.slice(j+1); el.disabled=true; try{ const on=await toggleTemaPermitido(slug,tema); touch(`${on?'Activó':'Quitó'} el tema «${tema}» para ${slug}`); toast(on?'Tema activado ✓ Ya le aparece al cliente en su panel.':'Tema quitado.'); if(editing)go('clientes'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
     if(d.manto!==undefined){ const j=d.manto.lastIndexOf(':'), slug=d.manto.slice(0,j), on=d.manto.slice(j+1)==='1'; const tit=($('#mantTit')?.value||'').trim(), msg=($('#mantMsg')?.value||'').trim(); el.disabled=true; try{ await setMantenimiento(slug,on,tit,msg); touch(`${on?'Activó':'Quitó'} el modo mantenimiento de ${slug}`); toast(on?'Mantenimiento activado 🛠️ La web lo muestra al recargar.':'Web en vivo ✅ Recarga para verla.'); if(editing)go('clientes'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
     if('backupnow'in d){ el.disabled=true; try{ const {error}=await sb.rpc('hacer_backup'); if(error)throw error; touch('Creó una copia de seguridad'); toast('Copia creada ✓'); }catch(ex){ toast(ex.message); } el.disabled=false; return go('backups'); }
     if(d.restbackup){ if(!confirm('¿Restaurar esta copia? Reemplazará el contenido actual de la web por el de esta fecha. (Tip: crea una copia de ahora antes, por si acaso.)'))return; el.disabled=true; try{ const nn=await restaurarBackup(d.restbackup); touch('Restauró una copia de seguridad'); toast('Copia restaurada ✓ ('+nn+' registros). La web muestra ese contenido al recargar.'); }catch(ex){ toast(ex.message); } el.disabled=false; return go('backups'); }
