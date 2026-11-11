@@ -80,6 +80,8 @@
     if (t === 'area') return `<label class="full">${esc(lab)}<textarea data-k="${k}" rows="${o.rows || 3}" maxlength="${o.max || 1200}">${esc(v)}</textarea>${hint}</label>`;
     if (t === 'lines') return `<label class="full">${esc(lab)}<textarea data-k="${k}" data-t="lines" rows="${o.rows || 4}">${esc((v || []).join('\n'))}</textarea><span class="hint">${esc(o.hint || 'Uno por línea.')}</span></label>`;
     if (t === 'rows') return `<label class="full">${esc(lab)}<textarea data-k="${k}" data-t="rows" data-cols="${o.cols || ''}" rows="${o.rows || 4}">${esc((v || []).map((r) => (Array.isArray(r) ? r : o.cols.split(',').map((c) => r[c] ?? '')).join(' | ')).join('\n'))}</textarea><span class="hint">${esc(o.hint)}</span></label>`;
+    if (t === 'time') { const [hh, mm] = String(v || '07:00').split(':'); const H = +hh || 0, h = H % 12 || 12, ap = H < 12 ? 'am' : 'pm', M = String(mm || '00').padStart(2, '0'); const mins = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55']; if (!mins.includes(M)) mins.push(M);
+      return `<label class="${cls}">${esc(lab)}<span class="hora12" data-k="${k}" data-t="time"><select aria-label="Hora">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((x) => `<option ${x === h ? 'selected' : ''}>${x}</option>`).join('')}</select><b>:</b><select aria-label="Minutos">${mins.map((x) => `<option ${x === M ? 'selected' : ''}>${x}</option>`).join('')}</select><select aria-label="am o pm"><option value="am" ${ap === 'am' ? 'selected' : ''}>am</option><option value="pm" ${ap === 'pm' ? 'selected' : ''}>pm</option></select></span>${hint}</label>`; }
     if (t === 'dias') return `<div class="full"><label>${esc(lab)}</label><div class="chk" data-k="${k}" data-t="dias">${DIAS.map(([a, b]) => `<label class="ck"><input type="checkbox" value="${a}" ${(v || []).includes(a) ? 'checked' : ''}>${esc(b)}</label>`).join('')}</div>${hint}</div>`;
     if (t === 'sedes') { const opts = [...data.sedes.map((s) => [s.id, s.nombre])]; return `<div class="full"><label>${esc(lab)}</label><div class="chk" data-k="${k}" data-t="sedes">${opts.map(([a, b]) => `<label class="ck"><input type="checkbox" value="${a}" ${(v || []).includes(a) ? 'checked' : ''}>${esc(b)}</label>`).join('')}</div></div>`; }
     if (t === 'media' || t === 'medias') {
@@ -99,6 +101,7 @@
       else if (t === 'num') v = el.value === '' ? '' : +el.value;
       else if (t === 'lines') v = el.value.split('\n').map((s) => s.trim()).filter(Boolean);
       else if (t === 'rows') { const cols = el.dataset.cols; v = el.value.split('\n').filter((s) => s.trim()).map((l) => { const p = l.split('|').map((s) => s.trim()); return cols ? Object.fromEntries(cols.split(',').map((c, i) => [c, p[i] || ''])) : p; }); }
+      else if (t === 'time') { const [a, b, c] = $$('select', el).map((x) => x.value); let n = (+a) % 12; if (c === 'pm') n += 12; v = String(n).padStart(2, '0') + ':' + b; }
       else if (t === 'sedes' || t === 'dias') v = $$('input:checked', el).map((i) => i.value);
       else if (t === 'media') v = JSON.parse(el.value)[0] || '';
       else if (t === 'medias') v = JSON.parse(el.value);

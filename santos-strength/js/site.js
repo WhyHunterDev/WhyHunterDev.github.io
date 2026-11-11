@@ -30,7 +30,8 @@
     return h >= toHora(p.desde) && h < toHora(p.hasta);
   };
   const cafeWa = (s) => { const w = String((s && s.cafeWhatsapp) || '').replace(/\D/g, ''); return w || (s && s.whatsapp) || ''; };
-  const cafeHorarioTxt = (s) => { const p = (s && s.cafePedidos) || {}; return `${esc(p.diasTxt || 'Lun a Sáb')}${p.dom ? ' y domingos' : ''} · ${esc(p.desde || '')}–${esc(p.hasta || '')}`; };
+  const h12w = (h) => { const [a, b] = String(h || '').split(':'); if (b === undefined) return h || ''; const n = +a; return `${n % 12 || 12}:${b} ${n < 12 ? 'am' : 'pm'}`; };
+  const cafeHorarioTxt = (s) => { const p = (s && s.cafePedidos) || {}; return `${esc(p.diasTxt || 'Lun a Sáb')}${p.dom ? ' y domingos' : ''} · ${esc(h12w(p.desde))} a ${esc(h12w(p.hasta))}`; };
   // ---------- Sede más cercana (ubicación del visitante) ----------
   const distKm = (a, b, c, d) => { const R = 6371, r = Math.PI / 180, x = Math.sin((c - a) * r / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin((d - b) * r / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); };
   function geoNota(txt) { const n = document.createElement('div'); n.className = 'geonota'; n.textContent = txt; document.body.appendChild(n); setTimeout(() => n.remove(), 4200); }
