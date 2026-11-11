@@ -230,10 +230,10 @@
       img: (p) => p.media, nombre: (p) => p.titulo, sub: (p) => `${p.tipo} · ${sedeName(p.sede)} · hasta ${p.fin || '—'}${p.fin && p.fin < SS.today() ? ' (vencido)' : ''}`,
       antes: (p) => { p.mediaTipo = isVid(p.media) ? 'video' : 'image'; } },
     galeria: { key: 'galeria', etiqueta: 'foto o video', estado: true, paginar: true,
-      filtro: (g) => isAdmin() || !mySede() || g.sede === mySede() || g.sede === 'todas',
-      puede: (g) => isAdmin() || g.sede === mySede() || !mySede(),
+      filtro: () => true,                                   // recepción ve y edita la galería de todas las sedes
+      puede: () => isAdmin() || me.rol === 'recepcion' || !mySede(),
       nuevo: () => ({ id: SS.uid(), media: '', poster: '', mediaTipo: 'image', sede: mySede() || 'todas', categoria: 'Entrenamiento', titulo: '', estado: nuevoEstado(), destacado: false }),
-      campos: () => [['media', 'Archivo', 'media', { accept: 'image/*,video/*', hint: 'Videos verticales (9:16) se ven mejor. Las fotos se optimizan solas.' }], ['titulo', 'Título corto', 'text', { max: 60 }], ['categoria', 'Categoría', 'text', { hint: 'Ej.: Entrenamiento, Humor, Eventos, Promos, Sedes, Tips' }], ['sede', 'Sede', 'select', { opts: sedeOpts() }], ['destacado', 'Mostrar en la portada (solo videos)', 'bool']],
+      campos: () => [['media', 'Archivo', 'media', { accept: 'image/*,video/*', hint: 'Videos verticales (9:16) se ven mejor. Las fotos se optimizan solas.' }], ['titulo', 'Título corto', 'text', { max: 60 }], ['categoria', 'Categoría', 'text', { hint: 'Ej.: Entrenamiento, Humor, Eventos, Promos, Sedes, Tips' }], ['sede', 'Sede', 'select', { opts: [['todas', 'Todas las sedes'], ...data.sedes.map((x) => [x.id, x.nombre])] }], ['destacado', 'Mostrar en la portada (solo videos)', 'bool']],
       img: (g) => g.mediaTipo === 'video' ? g.poster || g.media : g.media, nombre: (g) => g.titulo || '(sin título)', sub: (g) => `${g.mediaTipo === 'video' ? '🎬 Video' : '📷 Foto'} · ${g.categoria || 'General'} · ${sedeName(g.sede)}${g.destacado ? ' · ⭐ portada' : ''}`,
       antes: (g) => { if (!g.media) throw new Error('Sube un archivo'); g.mediaTipo = isVid(g.media) ? 'video' : 'image'; if (posters[g.media]) g.poster = posters[g.media]; if (g.mediaTipo === 'image') g.poster = ''; } },
     coaches: { key: 'entrenadores', etiqueta: 'coach',
