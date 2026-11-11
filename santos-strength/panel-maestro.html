@@ -98,6 +98,7 @@ th{color:var(--mu);font-size:.66rem;letter-spacing:.08em;text-transform:uppercas
 .tema b{font-size:1.2rem;line-height:1}
 .clavebox{background:rgba(0,230,168,.08);border:1px solid rgba(0,230,168,.35);border-radius:14px;padding:14px;margin-bottom:14px;display:grid;gap:8px;font-size:.88rem}.clavebox .cv{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.clavebox code{font-family:var(--mono);font-size:1.05rem;background:rgba(0,0,0,.4);padding:.45rem .7rem;border-radius:9px;color:var(--ok);letter-spacing:.04em}.clavebox small{color:var(--mu)}
 .uso-grid{display:grid;grid-template-columns:minmax(200px,1fr) 2fr;gap:18px}@media(max-width:760px){.uso-grid{grid-template-columns:1fr}}.uso-grid h4{font-size:.8rem;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}.uso-bar{display:flex;justify-content:space-between;padding:.45rem .7rem;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;font-size:.86rem}.uso-bar b{font-family:var(--mono);color:var(--ac2)}.uso-list{display:grid;gap:6px;font-size:.84rem;max-height:340px;overflow:auto}.uso-list small{color:var(--mu);font-family:var(--mono);font-size:.72rem}.err{border:1px solid var(--line);border-radius:10px;padding:.55rem .7rem;background:rgba(255,90,106,.04)}.err summary{cursor:pointer;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}.err pre{white-space:pre-wrap;font-family:var(--mono);font-size:.72rem;color:#cbd;margin-top:8px;max-height:220px;overflow:auto}
+.bk-kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.bk-kpi{background:#0e0e12;border:1px solid var(--line);border-radius:12px;padding:12px 16px;min-width:140px}.bk-kpi small{color:var(--mu);font-size:.78rem}.bk-kpi b{display:block;font-size:1.6rem;font-weight:800;font-family:var(--mono)}.bk-list{display:grid;gap:10px}.bk-cli{border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02);overflow:hidden}.bk-cli[open]{border-color:var(--line2);background:rgba(124,108,255,.04)}.bk-cli summary{list-style:none;display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}.bk-cli summary::-webkit-details-marker{display:none}.bk-av{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-weight:800;background:linear-gradient(135deg,var(--ac),var(--ac2));color:#07070b;flex:none}.bk-info{flex:1;min-width:0;display:grid}.bk-info small{color:var(--mu);font-size:.78rem}.bk-cli .tbl{padding:0 14px 12px}
 .note{background:rgba(124,108,255,.08);border:1px solid rgba(124,108,255,.25);color:#cfc7ff;border-radius:12px;padding:.8rem 1rem;font-size:.85rem;margin-bottom:16px;display:flex;gap:.6rem;align-items:flex-start}
 .sw{position:relative;width:42px;height:24px;border-radius:999px;background:#333;transition:.2s;flex:none}
 .sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
@@ -430,31 +431,47 @@ function usoPanel(slug,uso){
     <div class="panel"><h3>Errores de la web y del panel <span class="tag x">Solo tú</span></h3><p class="d">Se registran solos cuando algo falla en el navegador de un visitante o del equipo. Úsalos para mejorar el sistema.</p>${errHtml}</div>`;
 }
 async function cargarBackups(){
-  const {data,error}=await sb.from('backups').select('creado').order('creado',{ascending:false}); if(error)throw error;
-  const grp={}; for(const r of (data||[])){ grp[r.creado]=(grp[r.creado]||0)+1; }
-  return Object.entries(grp).map(([creado,n])=>({creado,n}));
+  const {data,error}=await sb.from('backups').select('creado,sitio_id').order('creado',{ascending:false}); if(error)throw error;
+  let sitios=[]; try{ sitios=(await sb.from('sitios').select('id,slug,negocio')).data||[]; }catch(_){}
+  const nombreDe=sid=>{ const st=sitios.find(x=>x.id===sid); if(!st) return {nombre:'Sin cliente asignado',slug:''};
+    const cl=clientes.find(c=>slugDe(c.url||'')===st.slug); return {nombre:(cl&&(cl.negocio||cl.nombre))||st.negocio||st.slug, slug:st.slug}; };
+  const porCliente={};
+  for(const r of (data||[])){ const k=r.sitio_id||'null';
+    const g=porCliente[k]||(porCliente[k]={sid:r.sitio_id,...nombreDe(r.sitio_id),snaps:{}});
+    g.snaps[r.creado]=(g.snaps[r.creado]||0)+1; }
+  for(const st of sitios){ if(!porCliente[st.id]) porCliente[st.id]={sid:st.id,...nombreDe(st.id),snaps:{}}; }
+  return Object.values(porCliente).map(g=>({...g,snaps:Object.entries(g.snaps).map(([creado,n])=>({creado,n})).sort((x,y)=>new Date(y.creado)-new Date(x.creado))}))
+    .sort((x,y)=>x.nombre.localeCompare(y.nombre));
 }
 const fechaHora=ts=>{ try{ return new Date(ts).toLocaleString('es-PE',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(_){ return ts; } };
-async function restaurarBackup(ts){
-  const {data,error}=await sb.from('backups').select('sitio_id,clave,valor').eq('creado',ts); if(error)throw error;
+async function restaurarBackup(ts,sid){
+  let q=sb.from('backups').select('sitio_id,clave,valor').eq('creado',ts); if(sid) q=q.eq('sitio_id',sid);
+  const {data,error}=await q; if(error)throw error;
   if(!data||!data.length) throw new Error('Esa copia está vacía.');
   for(const r of data){ const {error:e2}=await sb.from('contenido').upsert({sitio_id:r.sitio_id,clave:r.clave,valor:r.valor}); if(e2)throw e2; }
   return data.length;
 }
+let bkAbierto=null;
 V.backups=async ()=>{
-  H('Copias de seguridad','Respaldos de todo el contenido de tus webs. Se crean solos cada semana.');
-  $('#acts').innerHTML=`<button class="btn btn-p" data-backupnow>＋ Crear copia ahora</button>`;
-  let snaps=[], err=false; try{ snaps=await cargarBackups(); }catch(_){ err=true; }
-  if(err) return `<div class="note">💾 Para activar los backups, corre <b>07-backup.sql</b> y <b>08-backups-ui.sql</b> en Supabase (carpeta <b>backend</b>). Después aquí verás, crearás y borrarás copias con un clic.</div>`;
-  const total=snaps.reduce((a,s)=>a+s.n,0);
-  const box='background:#0e0e12;border:1px solid var(--line);border-radius:12px;padding:12px 16px';
-  const filas=snaps.map(s=>`<tr><td><b>${fechaHora(s.creado)}</b></td><td>${s.n} registros</td><td style="text-align:right;white-space:nowrap"><button class="btn btn-p btn-sm" data-restbackup="${esc(s.creado)}">↩ Restaurar</button> <button class="btn btn-g btn-sm" data-delbackup="${esc(s.creado)}">Borrar</button></td></tr>`).join('')||'<tr><td colspan="3" class="empty">Aún no hay copias. Crea la primera con el botón de arriba.</td></tr>';
-  return `<div class="panel"><div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-      <div style="${box}"><small style="color:var(--mu)">Copias guardadas</small><div style="font-size:1.6rem;font-weight:800;font-family:var(--mono,inherit)">${snaps.length}</div></div>
-      <div style="${box}"><small style="color:var(--mu)">Registros respaldados</small><div style="font-size:1.6rem;font-weight:800;font-family:var(--mono,inherit)">${total}</div></div></div>
-    <p class="d">Se guarda una copia automática cada domingo. Puedes crear una ahora mismo o borrar las que no necesites para ahorrar espacio.</p>
-    <div class="tbl"><table><tr><th>Fecha</th><th>Contenido</th><th></th></tr>${filas}</table></div>
-    ${snaps.length?`<button class="btn btn-g" data-prunebackups style="margin-top:12px">🧹 Borrar copias de más de 30 días</button>`:''}</div>`;
+  H('Copias de seguridad','Respaldos del contenido de cada cliente. Se crean solos cada domingo.');
+  $('#acts').innerHTML=`<button class="btn btn-g" data-backupnow>＋ Copia de todos</button>`;
+  let grupos=[], err=false; try{ grupos=await cargarBackups(); }catch(_){ err=true; }
+  if(err) return `<div class="note">💾 Para activar los backups, corre <b>07-backup.sql</b> y <b>08-backups-ui.sql</b> en Supabase (carpeta <b>backend</b>).</div>`;
+  const totalCopias=grupos.reduce((a,g)=>a+g.snaps.length,0);
+  const kpi=(t,v)=>`<div class="bk-kpi"><small>${t}</small><b>${v}</b></div>`;
+  const cards=grupos.map(g=>{
+    const ult=g.snaps[0], abierto=bkAbierto===(g.sid||'null')||grupos.length===1;
+    const filas=g.snaps.map(s=>`<tr><td><b>${fechaHora(s.creado)}</b></td><td>${s.n} registros</td><td style="text-align:right;white-space:nowrap"><button class="btn btn-p btn-sm" data-restbackup="${esc(s.creado)}" data-sid="${esc(g.sid||'')}" data-n="${esc(g.nombre)}">↩ Restaurar</button> <button class="btn btn-g btn-sm" data-delbackup="${esc(s.creado)}" data-sid="${esc(g.sid||'')}">Borrar</button></td></tr>`).join('')||'<tr><td colspan="3" class="empty">Aún no tiene copias.</td></tr>';
+    return `<details class="bk-cli" data-bk="${esc(g.sid||'null')}" ${abierto?'open':''}><summary>
+        <div class="bk-av">${esc((g.nombre||'?').slice(0,1).toUpperCase())}</div>
+        <div class="bk-info"><b>${esc(g.nombre)}</b><small>${g.slug?esc(g.slug)+' · ':''}${g.snaps.length} copia${g.snaps.length===1?'':'s'}${ult?' · última: '+fechaHora(ult.creado):' · sin copias'}</small></div>
+        ${g.sid?`<button class="btn btn-p btn-sm" data-backupsitio="${esc(g.sid)}" data-n="${esc(g.nombre)}">＋ Copia ahora</button>`:''}</summary>
+      <div class="tbl"><table><tr><th>Fecha</th><th>Contenido</th><th></th></tr>${filas}</table></div></details>`;
+  }).join('')||'<div class="empty">Aún no hay clientes con copias.</div>';
+  return `<div class="panel"><div class="bk-kpis">${kpi('Clientes',grupos.filter(g=>g.sid).length)}${kpi('Copias guardadas',totalCopias)}</div>
+    <p class="d">Cada cliente tiene sus propias copias. Toca un cliente para ver sus fechas, restaurar o borrar. Restaurar solo afecta a ese cliente.</p>
+    <div class="bk-list">${cards}</div>
+    ${totalCopias?`<button class="btn btn-g" data-prunebackups style="margin-top:14px">🧹 Borrar copias de más de 30 días</button>`:''}</div>`;
 };
 V.soporte=async ()=>{
   H('Modo soporte','Entra a la web de un cliente para darle soporte o ayuda.');
@@ -524,9 +541,10 @@ document.addEventListener('click', async e=>{
       try{ const {error}=await sb.rpc('gestor_borrar_usuario',{p_user:d.udel}); if(error)throw error;
         touch(`Borró la cuenta de ${d.n}`); toast('Cuenta borrada'); return go('clientes'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
     if(d.manto!==undefined){ const j=d.manto.lastIndexOf(':'), slug=d.manto.slice(0,j), on=d.manto.slice(j+1)==='1'; const tit=($('#mantTit')?.value||'').trim(), msg=($('#mantMsg')?.value||'').trim(); el.disabled=true; try{ await setMantenimiento(slug,on,tit,msg); touch(`${on?'Activó':'Quitó'} el modo mantenimiento de ${slug}`); toast(on?'Mantenimiento activado 🛠️ La web lo muestra al recargar.':'Web en vivo ✅ Recarga para verla.'); if(editing)go('clientes'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
+    if(d.backupsitio){ e.preventDefault(); el.disabled=true; bkAbierto=d.backupsitio; try{ const {data:n,error}=await sb.rpc('hacer_backup_sitio',{p_sitio:d.backupsitio}); if(error){ if(/function|does not exist|schema cache/i.test(error.message)) throw new Error('Corre 11-backup-por-cliente.sql en Supabase para activar este botón.'); throw error; } touch(`Creó una copia de ${d.n}`); toast(`Copia de ${d.n} creada ✓ (${n} registros)`); }catch(ex){ toast(ex.message); } el.disabled=false; return go('backups'); }
     if('backupnow'in d){ el.disabled=true; try{ const {error}=await sb.rpc('hacer_backup'); if(error)throw error; touch('Creó una copia de seguridad'); toast('Copia creada ✓'); }catch(ex){ toast(ex.message); } el.disabled=false; return go('backups'); }
-    if(d.restbackup){ if(!confirm('¿Restaurar esta copia? Reemplazará el contenido actual de la web por el de esta fecha. (Tip: crea una copia de ahora antes, por si acaso.)'))return; el.disabled=true; try{ const nn=await restaurarBackup(d.restbackup); touch('Restauró una copia de seguridad'); toast('Copia restaurada ✓ ('+nn+' registros). La web muestra ese contenido al recargar.'); }catch(ex){ toast(ex.message); } el.disabled=false; return go('backups'); }
-    if(d.delbackup){ if(!confirm('¿Borrar esta copia de seguridad?'))return; try{ const {error}=await sb.from('backups').delete().eq('creado',d.delbackup); if(error)throw error; touch('Borró una copia de seguridad'); toast('Copia borrada'); }catch(ex){ toast(ex.message); } return go('backups'); }
+    if(d.restbackup){ if(!confirm(`¿Restaurar la copia de ${d.n||'este cliente'}? Reemplazará el contenido actual de SU web por el de esa fecha. (Tip: crea una copia de ahora antes.)`))return; el.disabled=true; bkAbierto=d.sid||'null'; try{ const nn=await restaurarBackup(d.restbackup,d.sid||null); touch(`Restauró una copia de ${d.n||'un cliente'}`); toast('Copia restaurada ✓ ('+nn+' registros). La web muestra ese contenido al recargar.'); }catch(ex){ toast(ex.message); } el.disabled=false; return go('backups'); }
+    if(d.delbackup){ if(!confirm('¿Borrar esta copia de seguridad?'))return; bkAbierto=d.sid||'null'; try{ let q=sb.from('backups').delete().eq('creado',d.delbackup); q=d.sid?q.eq('sitio_id',d.sid):q; const {error}=await q; if(error)throw error; touch('Borró una copia de seguridad'); toast('Copia borrada'); }catch(ex){ toast(ex.message); } return go('backups'); }
     if('prunebackups'in d){ if(!confirm('¿Borrar todas las copias de más de 30 días?'))return; try{ const cut=new Date(Date.now()-30*864e5).toISOString(); const {error}=await sb.from('backups').delete().lt('creado',cut); if(error)throw error; touch('Borró copias viejas'); toast('Copias viejas borradas'); }catch(ex){ toast(ex.message); } return go('backups'); }
     if('clearlog'in d){ if(!confirm('¿Borrar tu registro privado de este dispositivo?'))return; localStorage.removeItem(LOG); return go('registro'); }
   }catch(ex){ toast(ex.message||'Error'); }
