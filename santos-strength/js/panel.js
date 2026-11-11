@@ -114,7 +114,7 @@
   // ---------- Sesión y seguridad ----------
   const lockGet = () => { try { return JSON.parse(localStorage.getItem('ss-lock') || '{}'); } catch (_) { return {}; } };
   const lockSet = (o) => { try { localStorage.setItem('ss-lock', JSON.stringify(o)); } catch (_) {} };
-  const asMe = (perfil, email) => ({ id: perfil.id, nombre: perfil.nombre || 'Usuario', email, rol: perfil.rol === 'gestor' ? 'admin' : perfil.rol, sede: perfil.sede || 'todas', gestor: perfil.rol === 'gestor', debeCambiar: false });
+  const asMe = (perfil, email) => ({ id: perfil.id, nombre: perfil.nombre || 'Usuario', email, rol: perfil.rol === 'gestor' ? 'admin' : perfil.rol, sede: perfil.sede || 'todas', gestor: perfil.rol === 'gestor', debeCambiar: !!perfil.debe_cambiar && perfil.rol !== 'gestor' });
   $('#loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const em = $('#em').value.trim().toLowerCase(), pw = $('#pw').value, err = $('#err');
@@ -333,7 +333,7 @@
     const b = $('#p1').value, c = $('#p2').value;
     if (b !== c) return toast('Las contraseñas nuevas no coinciden');
     if (!SS.passOK(b)) return toast('Usa 8+ caracteres con letras y números');
-    if (B()) { try { await B().auth.cambiarPass(b); toast('Contraseña actualizada ✓'); return go('resumen'); } catch (ex) { return toast(ex.message || 'No se pudo cambiar'); } }
+    if (B()) { try { await B().auth.cambiarPass(b); try { await B().sb.rpc('limpiar_debe_cambiar'); } catch (_) {} me.debeCambiar = false; toast('Contraseña actualizada ✓'); return go('resumen'); } catch (ex) { return toast(ex.message || 'No se pudo cambiar'); } }
     const a = $('#p0').value;
     if (!(await SS.checkPass(me, a))) return toast('La contraseña actual no es correcta');
     if (b === a) return toast('La nueva debe ser distinta a la actual');

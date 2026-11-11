@@ -103,6 +103,7 @@ th{color:var(--mu);font-size:.66rem;letter-spacing:.08em;text-transform:uppercas
 .tema{display:flex;align-items:center;gap:.5rem;padding:.7rem .9rem;border-radius:13px;background:rgba(255,255,255,.03);border:1px solid var(--line);font-weight:600;font-size:.86rem;transition:.15s;text-align:left}
 .tema:hover{border-color:var(--ac);transform:translateY(-2px);background:rgba(124,108,255,.1)}
 .tema b{font-size:1.2rem;line-height:1}
+.clavebox{background:rgba(0,230,168,.08);border:1px solid rgba(0,230,168,.35);border-radius:14px;padding:14px;margin-bottom:14px;display:grid;gap:8px;font-size:.88rem}.clavebox .cv{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.clavebox code{font-family:var(--mono);font-size:1.05rem;background:rgba(0,0,0,.4);padding:.45rem .7rem;border-radius:9px;color:var(--ok);letter-spacing:.04em}.clavebox small{color:var(--mu)}
 .note{background:rgba(124,108,255,.08);border:1px solid rgba(124,108,255,.25);color:#cfc7ff;border-radius:12px;padding:.8rem 1rem;font-size:.85rem;margin-bottom:16px;display:flex;gap:.6rem;align-items:flex-start}
 .sw{position:relative;width:42px;height:24px;border-radius:999px;background:#333;transition:.2s;flex:none}
 .sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
@@ -357,6 +358,7 @@ async function verPanel(cl){
   const vs=[...(cl.versiones||[])].sort((a,b)=>b.t-a.t);
   const slug=slugDe(cl.url);
   let cf=null, estErr=false, info=null; try{ info=await leerSitio(slug); cf=info?info.config:null; }catch(_){ estErr=true; }
+  let cu=null, cuErr=null; if(slug){ try{ cu=await leerCuentas(slug); }catch(ex){ cuErr=ex; } }
   const estado = slug ? (estErr?'<div class="panel"><h3>Estado del cliente</h3><div class="note">No pude leer el estado de la web ahora. Revisa la URL o inténtalo de nuevo.</div></div>':(estadoPanel(cl,cf)+(info?estadisticasPanel(info):''))) : '';
   return estado+`<div class="panel"><h3>Tema de la web <span class="tag x">Extra · cóbralo</span></h3><p class="d">Cambia el look de temporada de la web de este cliente al instante. Ideal para vender como adicional.</p>
     ${slug?`<div class="temas">${TEMAS.map(([k,n,emo])=>`<button class="tema" data-tema="${esc(slug)}:${esc(k)}"><b>${emo}</b> ${esc(n)}</button>`).join('')}</div><label style="display:block;margin-top:14px;color:var(--mu);font-size:.8rem;font-weight:600">Texto del banner de promo (opcional)<input id="promoTxt" type="text" maxlength="90" placeholder="Ej: 2×1 en inscripción solo diciembre" style="margin-top:5px"></label><button class="tema save" data-savepromo="${esc(slug)}" style="margin-top:10px">💾 Guardar texto de promo</button><p class="d" style="margin-top:6px">Déjalo vacío para usar el texto por defecto de cada temporada.</p><div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px"><h4 style="font-size:.92rem;margin-bottom:4px">Temas que puede usar el cliente <span class="tag x">Cobra por cada uno</span></h4><p class="d">Activa los temas que el cliente pagó. Solo esos le aparecerán en su panel para ponerlos él mismo cuando quiera.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${TEMAS.filter(([k])=>k).map(([k,n,emo])=>{const on=((cf&&cf.temasPermitidos)||[]).includes(k);return `<button class="tema${on?' save':''}" data-togtema="${esc(slug)}:${esc(k)}" style="${on?'border-color:var(--ok);color:var(--ok)':''}">${on?'✅':'➕'} ${emo} ${esc(n)}</button>`;}).join('')}</div></div>`:'<div class="note">Pon la <b>URL de la web</b> del cliente arriba y guarda, para poder aplicar temas.</div>'}</div>
@@ -365,11 +367,46 @@ async function verPanel(cl){
       <label style="display:block;color:var(--mu);font-size:.8rem;font-weight:600">Título (opcional)<input id="mantTit" type="text" maxlength="60" value="${esc((cf&&cf.manto&&cf.manto.titulo)||'')}" placeholder="Estamos mejorando la web" style="margin-top:5px"></label>
       <label style="display:block;color:var(--mu);font-size:.8rem;font-weight:600;margin-top:10px">Mensaje (opcional)<input id="mantMsg" type="text" maxlength="140" value="${esc((cf&&cf.manto&&cf.manto.msg)||'')}" placeholder="Volvemos en un momento. ¡Gracias por tu paciencia!" style="margin-top:5px"></label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="tema" data-manto="${esc(slug)}:1">🛠️ Activar mantenimiento</button><button class="tema" data-manto="${esc(slug)}:0">✅ Poner la web en vivo</button></div></div>`:''}
+    ${slug?cuentasPanel(slug,cu,cuErr):''}
     <div class="panel"><h3>Versiones y cambios</h3><p class="d">Guarda un punto antes de cada cambio grande para poder volver atrás.</p>
     <form class="form" id="vf" style="margin-bottom:14px"><label class="full">Describe el cambio<input data-k="etq" placeholder="Ej.: Nueva promo de verano"></label><label class="full">Nota (opcional)<input data-k="nota"></label><button class="btn btn-g" data-ver="${cl.id}" type="button" style="width:fit-content">＋ Guardar versión actual</button></form>
     ${vs.map((v,i)=>`<div class="ver ${i===0?'now':''}"><span class="dot"></span><div class="vi"><b>${esc(v.etq)}</b>${i===0?' <span class="tag activo">Actual</span>':''}<br><small>${fecha(v.t)}${v.nota?' · '+esc(v.nota):''}</small></div>${i>0?`<button class="btn btn-g btn-sm" data-rollback="${cl.id}:${v.id}">Volver a esta</button>`:''}</div>`).join('')||'<small style="color:var(--mu)">Sin versiones guardadas.</small>'}</div>
     <div class="panel"><h3>Base de datos</h3><p class="d">Esta web ya guarda sus datos en Supabase (la nube). Desde aquí abres su panel para darle soporte.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">${cl.panel?`<a class="btn btn-g btn-sm" href="${esc(cl.panel)}" target="_blank" rel="noopener">Abrir panel del cliente ↗</a>`:''}<button class="btn btn-g btn-sm" data-export="${cl.id}">Exportar ficha (JSON)</button></div></div>`;
+}
+let ultimaClave=null;
+const ROLES_U=[['admin','Administrador'],['recepcion','Recepción'],['cafetin','Cafetín']];
+function claveTemporal(){ const a='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789', r=crypto.getRandomValues(new Uint32Array(10)); return 'Ss-'+[...r].map(n=>a[n%a.length]).join(''); }
+async function leerCuentas(slug){
+  const {data,error}=await sb.rpc('gestor_listar_usuarios',{p_slug:slug}); if(error) throw error;
+  let sedes=[]; try{ const {data:st}=await sb.from('sitios').select('id').eq('slug',slug).single(); const {data:c}=await sb.from('contenido').select('valor').eq('sitio_id',st.id).eq('clave','sedes').maybeSingle(); sedes=(c&&c.valor)||[]; }catch(_){}
+  return {users:data||[], sedes};
+}
+function cuentasPanel(slug,cu,err){
+  const head=`<h3>Cuentas del equipo <span class="tag x">Soporte</span></h3><p class="d">Crea las cuentas de cada persona de la web, reinicia su contraseña si la olvidan o se bloquean, y bloquea o borra accesos. Solo tú (gestor) puedes hacerlo.</p>`;
+  if(err) return `<div class="panel">${head}<div class="note">⚙️ Falta activar esta función: corre el archivo <b>09-usuarios.sql</b> en Supabase → SQL Editor (una sola vez) y recarga.</div></div>`;
+  const sedeN=id=>id==='todas'?'Todas':((cu.sedes.find(x=>x.id===id)||{}).nombre||id);
+  const rolN=r=>(ROLES_U.find(x=>x[0]===r)||[r,r])[1];
+  let box='';
+  if(ultimaClave&&ultimaClave.slug===slug){ const u=ultimaClave; ultimaClave=null;
+    box=`<div class="clavebox"><div>🔑 <b>${u.nuevo?'Cuenta creada':'Clave reiniciada'}</b> para <b>${esc(u.nombre)}</b> (${esc(u.email)})</div>
+      <div class="cv"><code>${esc(u.pass)}</code><button class="btn btn-p btn-sm" data-ucopy="${esc(u.pass)}">Copiar</button><button class="btn btn-g btn-sm" data-ucopy="${esc(`Hola ${u.nombre} 👋 Tu acceso al panel:\nCorreo: ${u.email}\nClave temporal: ${u.pass}\nAl entrar te pedirá crear tu propia contraseña.`)}">Copiar mensaje para enviar</button></div>
+      <small>Se muestra una sola vez. Al entrar, el sistema le pedirá crear su propia contraseña.</small></div>`; }
+  const fh=t=>t?fechaHora(t):'Nunca';
+  const rows=cu.users.map(u=>`<tr><td><b>${esc(u.nombre)}</b><br><small style="color:var(--mu)">${esc(u.email)}</small></td><td>${esc(rolN(u.rol))}</td><td>${esc(sedeN(u.sede))}</td>
+    <td>${u.activo?'<span class="tag activo">Activa</span>':'<span class="tag baja">Bloqueada</span>'}${u.debe_cambiar?'<br><small style="color:var(--mu)">Clave temporal</small>':''}</td><td><small>${esc(fh(u.ultimo_ingreso))}</small></td>
+    <td style="text-align:right;white-space:nowrap">${u.rol==='gestor'?'<small style="color:var(--mu)">Gestor</small>':`<button class="btn btn-g btn-sm" data-ureset="${u.id}" data-n="${esc(u.nombre)}" data-e="${esc(u.email)}" data-s="${esc(slug)}">🔑 Reiniciar clave</button> <button class="btn btn-sm ${u.activo?'btn-g':'btn-ok'}" data-uact="${u.id}" data-on="${u.activo?0:1}" data-n="${esc(u.nombre)}">${u.activo?'🔒 Bloquear':'✅ Activar'}</button> <button class="btn btn-bad btn-sm" data-udel="${u.id}" data-n="${esc(u.nombre)}">Borrar</button>`}</td></tr>`).join('');
+  const sedesOpt=[['todas','Todas las sedes'],...cu.sedes.map(x=>[x.id,x.nombre])].map(([a,b])=>`<option value="${esc(a)}">${esc(b)}</option>`).join('');
+  return `<div class="panel">${head}${box}
+    <div class="tbl"><table><tr><th>Persona</th><th>Rol</th><th>Sede</th><th>Estado</th><th>Último ingreso</th><th></th></tr>${rows||'<tr><td colspan="6" class="empty">Aún no hay cuentas. Crea la primera abajo.</td></tr>'}</table></div>
+    <h4 style="margin:18px 0 8px;font-size:.95rem">＋ Nueva cuenta</h4>
+    <div class="form" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px">
+      <label>Nombre<input id="cuN" maxlength="60" placeholder="Ej: Recepción Manchay"></label>
+      <label>Correo<input id="cuE" type="email" maxlength="120" placeholder="persona@correo.com"></label>
+      <label>Rol<select id="cuR">${ROLES_U.map(([a,b])=>`<option value="${a}" ${a==='recepcion'?'selected':''}>${b}</option>`).join('')}</select></label>
+      <label>Sede<select id="cuS">${sedesOpt}</select></label></div>
+    <button class="btn btn-p" data-ucrear="${esc(slug)}" style="margin-top:12px">Crear cuenta con clave temporal</button>
+    <p class="d" style="margin-top:8px">La clave se genera sola (segura) y te la muestro para que se la envíes. Si alguien se bloquea por muchos intentos, espera unos minutos o reiníciale la clave.</p></div>`;
 }
 async function cargarBackups(){
   const {data,error}=await sb.from('backups').select('creado').order('creado',{ascending:false}); if(error)throw error;
@@ -450,6 +487,20 @@ document.addEventListener('click', async e=>{
     if(d.tema!==undefined){ const i=d.tema.indexOf(':'), slug=d.tema.slice(0,i), tema=d.tema.slice(i+1); el.disabled=true; try{ await aplicarTema(slug,tema); touch(`Aplicó el tema «${tema||'normal'}» a ${slug}`); toast('Tema aplicado ✓ La web cambia al recargar.'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
     if(d.savepromo!==undefined){ const promo=($('#promoTxt')?.value||'').trim(); el.disabled=true; try{ await guardarPromo(d.savepromo,promo); touch(`Editó el texto de promo de ${d.savepromo}`); toast(promo?'Texto guardado ✓ La web lo muestra al recargar.':'Listo ✓ Usará el texto por defecto.'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
     if(d.togtema!==undefined){ const j=d.togtema.indexOf(':'), slug=d.togtema.slice(0,j), tema=d.togtema.slice(j+1); el.disabled=true; try{ const on=await toggleTemaPermitido(slug,tema); touch(`${on?'Activó':'Quitó'} el tema «${tema}» para ${slug}`); toast(on?'Tema activado ✓ Ya le aparece al cliente en su panel.':'Tema quitado.'); if(editing)go('clientes'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
+    if(d.ucopy!==undefined){ try{ await navigator.clipboard.writeText(d.ucopy); toast('Copiado ✓'); }catch(_){ toast('No se pudo copiar, cópialo manualmente'); } return; }
+    if(d.ucrear){ const slug=d.ucrear, nombre=$('#cuN').value.trim(), email=$('#cuE').value.trim().toLowerCase(), rol=$('#cuR').value, sedeV=$('#cuS').value;
+      if(!nombre||!email) return toast('Pon nombre y correo'); const pass=claveTemporal(); el.disabled=true;
+      try{ const {error}=await sb.rpc('gestor_crear_usuario',{p_slug:slug,p_email:email,p_pass:pass,p_nombre:nombre,p_rol:rol,p_sede:sedeV}); if(error)throw error;
+        ultimaClave={slug,nombre,email,pass,nuevo:true}; touch(`Creó la cuenta de ${nombre} (${slug})`); toast('Cuenta creada ✓'); return go('clientes'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
+    if(d.ureset){ if(!confirm(`¿Reiniciar la contraseña de ${d.n}? Recibirá una clave temporal nueva y se cerrarán sus sesiones abiertas.`)) return; const pass=claveTemporal(); el.disabled=true;
+      try{ const {error}=await sb.rpc('gestor_reiniciar_clave',{p_user:d.ureset,p_pass:pass}); if(error)throw error;
+        ultimaClave={slug:d.s,nombre:d.n,email:d.e,pass}; touch(`Reinició la clave de ${d.n}`); toast('Clave reiniciada ✓'); return go('clientes'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
+    if(d.uact){ const on=d.on==='1'; el.disabled=true;
+      try{ const {error}=await sb.rpc('gestor_set_activo',{p_user:d.uact,p_activo:on}); if(error)throw error;
+        touch(`${on?'Activó':'Bloqueó'} la cuenta de ${d.n}`); toast(on?'Cuenta activada ✓':'Cuenta bloqueada 🔒'); return go('clientes'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
+    if(d.udel){ if(!confirm(`¿Borrar la cuenta de ${d.n}? Ya no podrá entrar. No se puede deshacer.`)) return; el.disabled=true;
+      try{ const {error}=await sb.rpc('gestor_borrar_usuario',{p_user:d.udel}); if(error)throw error;
+        touch(`Borró la cuenta de ${d.n}`); toast('Cuenta borrada'); return go('clientes'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
     if(d.manto!==undefined){ const j=d.manto.lastIndexOf(':'), slug=d.manto.slice(0,j), on=d.manto.slice(j+1)==='1'; const tit=($('#mantTit')?.value||'').trim(), msg=($('#mantMsg')?.value||'').trim(); el.disabled=true; try{ await setMantenimiento(slug,on,tit,msg); touch(`${on?'Activó':'Quitó'} el modo mantenimiento de ${slug}`); toast(on?'Mantenimiento activado 🛠️ La web lo muestra al recargar.':'Web en vivo ✅ Recarga para verla.'); if(editing)go('clientes'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
     if('backupnow'in d){ el.disabled=true; try{ const {error}=await sb.rpc('hacer_backup'); if(error)throw error; touch('Creó una copia de seguridad'); toast('Copia creada ✓'); }catch(ex){ toast(ex.message); } el.disabled=false; return go('backups'); }
     if(d.restbackup){ if(!confirm('¿Restaurar esta copia? Reemplazará el contenido actual de la web por el de esta fecha. (Tip: crea una copia de ahora antes, por si acaso.)'))return; el.disabled=true; try{ const nn=await restaurarBackup(d.restbackup); touch('Restauró una copia de seguridad'); toast('Copia restaurada ✓ ('+nn+' registros). La web muestra ese contenido al recargar.'); }catch(ex){ toast(ex.message); } el.disabled=false; return go('backups'); }
