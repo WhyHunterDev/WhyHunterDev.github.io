@@ -10,9 +10,9 @@
  * ============================================================ */
 (function () {
   const CONFIG = {
-    url: 'https://TU-PROYECTO.supabase.co',   // ← pega tu Project URL
-    anonKey: 'TU-ANON-KEY',                    // ← pega tu clave anon (pública)
-    sitio: 'santos-strength'                   // slug del sitio de esta web
+    url: 'https://szvdzcaoxjstdyblhxrd.supabase.co',             // Project URL
+    anonKey: 'sb_publishable_LOmoV7GDpORg5J1eE7YriA_tB4Y6EYe',  // llave publishable (pública)
+    sitio: 'santos-strength'                                     // slug del sitio de esta web
   };
   if (!window.supabase || CONFIG.url.includes('TU-PROYECTO')) return; // sin configurar → demo local
 
