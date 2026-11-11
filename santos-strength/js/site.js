@@ -293,7 +293,8 @@
     document.body.appendChild(deco);
     if (cfg.lights) { const lg = document.createElement('div'); lg.id = 'temaLights'; lg.setAttribute('aria-hidden', 'true'); document.body.appendChild(lg); }
     const rib = document.createElement('div'); rib.id = 'temaRibbon';
-    rib.innerHTML = `<b>${esc(cfg.promo)}</b><button class="x" aria-label="Cerrar">×</button>`;
+    const promoTxt = (data.config.temaPromo || '').trim() || cfg.promo;
+    rib.innerHTML = `<b>${esc(promoTxt)}</b><button class="x" aria-label="Cerrar">×</button>`;
     rib.querySelector('.x').addEventListener('click', () => { rib.remove(); root.removeAttribute('data-ribbon'); });
     document.body.appendChild(rib);
     root.setAttribute('data-ribbon', '');

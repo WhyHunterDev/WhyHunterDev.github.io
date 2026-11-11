@@ -182,6 +182,13 @@ async function aplicarTema(slug,tema){
   const conf=(c&&c.valor)||{}; conf.tema=tema;
   const {error:e2}=await sb.from('contenido').upsert({sitio_id:s.id,clave:'config',valor:conf}); if(e2)throw e2;
 }
+async function guardarPromo(slug,promo){
+  const {data:s,error:e1}=await sb.from('sitios').select('id').eq('slug',slug).maybeSingle(); if(e1)throw e1;
+  if(!s)throw new Error('No encuentro el sitio «'+slug+'». Revisa la URL de la web.');
+  const {data:c}=await sb.from('contenido').select('valor').eq('sitio_id',s.id).eq('clave','config').maybeSingle();
+  const conf=(c&&c.valor)||{}; conf.temaPromo=promo;
+  const {error:e2}=await sb.from('contenido').upsert({sitio_id:s.id,clave:'config',valor:conf}); if(e2)throw e2;
+}
 
 // ---- Login / seguridad ----
 $('#lf').addEventListener('submit', async e=>{
@@ -270,7 +277,7 @@ function verPanel(cl){
   const vs=[...(cl.versiones||[])].sort((a,b)=>b.t-a.t);
   const slug=slugDe(cl.url);
   return`<div class="panel"><h3>Tema de la web <span class="tag x">Extra · cóbralo</span></h3><p class="d">Cambia el look de temporada de la web de este cliente al instante. Ideal para vender como adicional.</p>
-    ${slug?`<div class="temas">${TEMAS.map(([k,n,emo])=>`<button class="tema" data-tema="${esc(slug)}:${esc(k)}"><b>${emo}</b> ${esc(n)}</button>`).join('')}</div>`:'<div class="note">Pon la <b>URL de la web</b> del cliente arriba y guarda, para poder aplicar temas.</div>'}</div>
+    ${slug?`<div class="temas">${TEMAS.map(([k,n,emo])=>`<button class="tema" data-tema="${esc(slug)}:${esc(k)}"><b>${emo}</b> ${esc(n)}</button>`).join('')}</div><label style="display:block;margin-top:14px;color:var(--mu);font-size:.8rem;font-weight:600">Texto del banner de promo (opcional)<input id="promoTxt" type="text" maxlength="90" placeholder="Ej: 2×1 en inscripción solo diciembre" style="margin-top:5px"></label><button class="tema save" data-savepromo="${esc(slug)}" style="margin-top:10px">💾 Guardar texto de promo</button><p class="d" style="margin-top:6px">Déjalo vacío para usar el texto por defecto de cada temporada.</p>`:'<div class="note">Pon la <b>URL de la web</b> del cliente arriba y guarda, para poder aplicar temas.</div>'}</div>
     <div class="panel"><h3>Versiones y cambios</h3><p class="d">Guarda un punto antes de cada cambio grande para poder volver atrás.</p>
     <form class="form" id="vf" style="margin-bottom:14px"><label class="full">Describe el cambio<input data-k="etq" placeholder="Ej.: Nueva promo de verano"></label><label class="full">Nota (opcional)<input data-k="nota"></label><button class="btn btn-g" data-ver="${cl.id}" type="button" style="width:fit-content">＋ Guardar versión actual</button></form>
     ${vs.map((v,i)=>`<div class="ver ${i===0?'now':''}"><span class="dot"></span><div class="vi"><b>${esc(v.etq)}</b>${i===0?' <span class="tag activo">Actual</span>':''}<br><small>${fecha(v.t)}${v.nota?' · '+esc(v.nota):''}</small></div>${i>0?`<button class="btn btn-g btn-sm" data-rollback="${cl.id}:${v.id}">Volver a esta</button>`:''}</div>`).join('')||'<small style="color:var(--mu)">Sin versiones guardadas.</small>'}</div>
@@ -327,6 +334,7 @@ document.addEventListener('click', async e=>{
     if(d.export){ const c=clientes.find(x=>x.id===d.export),a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(c,null,2)],{type:'application/json'})); a.download=c.negocio.replace(/\W+/g,'-')+'.json'; a.click(); return; }
     if(d.sop){ const c=clientes.find(x=>x.id===d.sop); if(cfg().soporteSinRegistro)touch(`Entró en modo soporte a ${c.negocio}`); return; }
     if(d.tema!==undefined){ const i=d.tema.indexOf(':'), slug=d.tema.slice(0,i), tema=d.tema.slice(i+1); el.disabled=true; try{ await aplicarTema(slug,tema); touch(`Aplicó el tema «${tema||'normal'}» a ${slug}`); toast('Tema aplicado ✓ La web cambia al recargar.'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
+    if(d.savepromo!==undefined){ const promo=($('#promoTxt')?.value||'').trim(); el.disabled=true; try{ await guardarPromo(d.savepromo,promo); touch(`Editó el texto de promo de ${d.savepromo}`); toast(promo?'Texto guardado ✓ La web lo muestra al recargar.':'Listo ✓ Usará el texto por defecto.'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
     if('clearlog'in d){ if(!confirm('¿Borrar tu registro privado de este dispositivo?'))return; localStorage.removeItem(LOG); return go('registro'); }
   }catch(ex){ toast(ex.message||'Error'); }
 });
