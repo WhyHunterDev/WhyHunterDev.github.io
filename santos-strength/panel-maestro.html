@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gestor</title>
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0a0a0f">
+<style>
+:root{--bg:#07070b;--bg2:#0e0e15;--card:#13131c;--line:#242433;--ac:#7c6cff;--ac2:#00e6a8;--tx:#eef0f6;--mu:#8b8ba3;--ok:#00e6a8;--warn:#ffb020;--bad:#ff5a6a;--f:'Inter',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font:15px/1.5 var(--f);min-height:100vh;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+input,select,textarea{width:100%;background:#0a0a11;border:1px solid var(--line);border-radius:11px;padding:.7rem .85rem;outline:none;transition:border .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--ac)}
+label{display:grid;gap:.3rem;font-size:.78rem;font-weight:600;color:var(--mu)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;padding:.65rem 1.1rem;border-radius:11px;font-weight:650;font-size:.88rem;transition:.15s;white-space:nowrap}
+.btn-p{background:linear-gradient(135deg,var(--ac),#9d7bff);color:#fff}.btn-p:hover{filter:brightness(1.1)}
+.btn-g{background:#1a1a27;border:1px solid var(--line)}.btn-g:hover{border-color:#3a3a52}
+.btn-sm{padding:.4rem .7rem;font-size:.78rem;border-radius:8px}
+.btn-bad{background:rgba(255,90,106,.12);color:var(--bad)}
+.btn-ok{background:rgba(0,230,168,.12);color:var(--ok)}
+.btn:disabled{opacity:.5;cursor:wait}
+.link{color:var(--ac);font-size:.82rem;text-align:center;background:none}
+#login{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(ellipse at 50% -10%,rgba(124,108,255,.18),transparent 55%)}
+#login form{width:min(400px,100%);display:grid;gap:1rem;background:#0c0c14;border:1px solid var(--line);border-radius:22px;padding:34px}
+.logo{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--ac),var(--ac2));display:grid;place-items:center;font-weight:800;font-size:1.5rem;color:#07070b}
+.err{color:var(--bad);font-size:.84rem}
+.ok-msg{color:var(--ok);font-size:.84rem}
+.lock{display:flex;gap:.4rem;align-items:center;color:var(--mu);font-size:.72rem}
+#app{display:none;grid-template-columns:230px 1fr;min-height:100vh}
+aside{background:var(--bg2);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:2px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{display:flex;gap:.55rem;align-items:center;padding:4px 8px 18px;font-weight:700}
+.brand .logo{width:34px;height:34px;font-size:1.05rem;border-radius:10px}
+.grp{font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:#56566e;padding:14px 12px 5px}
+.nv{display:flex;gap:.65rem;align-items:center;padding:.6rem .8rem;border-radius:10px;color:var(--mu);font-weight:600;font-size:.87rem;transition:.15s;text-align:left;width:100%}
+.nv:hover{color:var(--tx);background:#17172230}
+.nv.on{background:linear-gradient(135deg,rgba(124,108,255,.22),rgba(0,230,168,.1));color:var(--tx)}
+.me{margin-top:auto;border-top:1px solid var(--line);padding:14px 8px 0;font-size:.84rem}
+.me small{color:var(--mu);display:block;margin-bottom:10px}
+main{padding:26px clamp(16px,3vw,38px) 80px;min-width:0;max-width:1200px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:6px}
+h1{font-size:1.9rem;line-height:1.1;font-weight:750;letter-spacing:-.02em}
+.sub{color:var(--mu);margin:0 0 22px;font-size:.92rem}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:16px;position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ac)}
+.kpi.g::before{background:var(--ac2)}.kpi.w::before{background:var(--warn)}
+.kpi b{display:block;font-size:1.9rem;line-height:1;font-weight:750;letter-spacing:-.02em}
+.kpi small{color:var(--mu);font-size:.8rem}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px}
+.panel>h3{font-size:1rem;margin-bottom:3px}.panel>p.d{color:var(--mu);font-size:.84rem;margin-bottom:14px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:13px}.form .full{grid-column:1/-1}
+.clients{display:grid;gap:12px}
+.cl{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:16px 18px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+.cl .in{min-width:0}
+.cl h4{font-size:1.05rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.cl .meta{color:var(--mu);font-size:.82rem;margin-top:3px;display:flex;gap:.8rem;flex-wrap:wrap}
+.cl .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.tag{font-size:.64rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:.2rem .5rem;border-radius:999px;background:#222233}
+.tag.activo{background:rgba(0,230,168,.16);color:var(--ok)}.tag.soporte{background:rgba(124,108,255,.18);color:#b9adff}.tag.pausado{background:rgba(255,176,32,.16);color:var(--warn)}.tag.baja{background:rgba(255,90,106,.14);color:var(--bad)}
+.tag.pg{background:rgba(0,230,168,.16);color:var(--ok)}.tag.pend{background:rgba(255,176,32,.16);color:var(--warn)}
+table{width:100%;border-collapse:collapse;font-size:.87rem}
+th,td{text-align:left;padding:.65rem .5rem;border-bottom:1px solid var(--line)}
+th{color:var(--mu);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase}
+.tbl{overflow-x:auto}
+.ver{display:flex;gap:12px;align-items:center;padding:.6rem 0;border-bottom:1px solid var(--line)}
+.ver .dot{width:9px;height:9px;border-radius:50%;background:var(--ac);flex:none}
+.ver.now .dot{background:var(--ac2);box-shadow:0 0 0 4px rgba(0,230,168,.18)}
+.ver .vi{flex:1;min-width:0}.ver small{color:var(--mu)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 16px}
+.chip{padding:.4rem .8rem;border-radius:999px;background:#17172230;border:1px solid var(--line);color:var(--mu);font-size:.82rem;font-weight:600}
+.chip.on{background:var(--ac);color:#fff;border-color:transparent}
+.note{background:rgba(124,108,255,.08);border:1px solid rgba(124,108,255,.25);color:#cfc7ff;border-radius:12px;padding:.8rem 1rem;font-size:.85rem;margin-bottom:16px;display:flex;gap:.6rem;align-items:flex-start}
+.sw{position:relative;width:42px;height:24px;border-radius:999px;background:#333;transition:.2s;flex:none}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
+.sw.on{background:var(--ac2)}.sw.on::after{left:21px}
+.row-sw{display:flex;align-items:center;gap:.7rem;cursor:pointer}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--ac);color:#fff;font-weight:650;padding:.75rem 1.2rem;border-radius:11px;transition:transform .35s;z-index:99;max-width:90vw}
+.toast.on{transform:translateX(-50%)}
+.back{color:var(--mu);font-size:.85rem;margin-bottom:12px;display:inline-flex;gap:.4rem}
+.menuBtn{display:none}
+.empty{color:var(--mu);text-align:center;padding:30px}
+.center{min-height:100vh;display:grid;place-items:center;padding:24px;text-align:center;color:var(--mu)}
+@media(max-width:860px){
+  #app{grid-template-columns:1fr}
+  aside{position:fixed;inset:0 30% 0 0;z-index:50;transform:translateX(-100%);transition:transform .3s}
+  aside.open{transform:none;box-shadow:0 0 0 100vmax rgba(0,0,0,.55)}
+  .menuBtn{display:inline-flex}
+  .grid4{grid-template-columns:repeat(2,1fr)}
+  .form{grid-template-columns:1fr}
+  .cl{grid-template-columns:1fr}.cl .acts{justify-content:flex-start}
+}
+</style>
+</head>
+<body>
+<section id="login">
+  <form id="lf" autocomplete="on">
+    <div class="logo">◆</div>
+    <div><h1 style="font-size:1.5rem">Panel Gestor</h1><p style="color:var(--mu);font-size:.88rem">Acceso privado del administrador de la agencia.</p></div>
+    <label>Correo<input id="em" type="email" required autocomplete="username"></label>
+    <label>Contraseña<input id="pw" type="password" required autocomplete="current-password"></label>
+    <p class="err" id="err" hidden></p>
+    <p class="ok-msg" id="okm" hidden></p>
+    <button class="btn btn-p" type="submit" id="lbtn">Entrar</button>
+    <button type="button" class="link" id="forgot">¿Olvidaste tu contraseña?</button>
+    <p class="lock">🔒 Acceso cifrado con Supabase · recuperación por correo</p>
+  </form>
+</section>
+
+<section id="loading" class="center" style="display:none">Conectando…</section>
+<section id="nocfg" class="center" style="display:none">⚠️ Falta configurar la conexión a la base de datos (backend/conexion.js).</section>
+
+<div id="app">
+  <aside id="side"></aside>
+  <main>
+    <div class="top"><div style="display:flex;gap:10px;align-items:center"><button class="btn btn-g btn-sm menuBtn" id="mb">☰</button><div id="h"></div></div><div id="acts"></div></div>
+    <div id="view"></div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="backend/conexion.js"></script>
+<script>
+(function () {
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const soles=n=>'S/ '+(+n||0).toLocaleString('es-PE');
+const fecha=t=>t?new Date(t).toLocaleString('es-PE',{dateStyle:'medium',timeStyle:'short'}):'';
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2600);};
+const show=id=>['login','loading','nocfg','app'].forEach(s=>{const el=$('#'+s);el.style.display=s===id?(s==='app'?'grid':(s==='login'?'':'grid')):'none';});
+
+// Sin backend configurado → avisa y detente.
+if (!window.SS_BACKEND) { show('nocfg'); return; }
+const sb = window.SS_BACKEND.sb, AUTH = window.SS_BACKEND.auth;
+
+let me=null, clientes=[], view='resumen', editing=null, recovery=false;
+const CFG='gestor-cfg', LOG='gestor-log';
+const cfg=()=>{try{return JSON.parse(localStorage.getItem(CFG))||{soporteSinRegistro:true};}catch(_){return{soporteSinRegistro:true};}};
+const setCfg=o=>{try{localStorage.setItem(CFG,JSON.stringify(o));}catch(_){}}
+const logGet=()=>{try{return JSON.parse(localStorage.getItem(LOG))||[];}catch(_){return[];}};
+const touch=m=>{try{const l=logGet();l.unshift({t:Date.now(),m});localStorage.setItem(LOG,JSON.stringify(l.slice(0,200)));}catch(_){}}
+
+// ---- Clientes (tabla clientes_agencia en la nube) ----
+async function cargar(){ const {data,error}=await sb.from('clientes_agencia').select('*').order('creado',{ascending:true}); if(error)throw error; clientes=data||[]; }
+async function guardar(c){ const {error}=await sb.from('clientes_agencia').upsert(c); if(error)throw error; }
+async function borrar(id){ const {error}=await sb.from('clientes_agencia').delete().eq('id',id); if(error)throw error; }
+
+// ---- Login / seguridad ----
+$('#lf').addEventListener('submit', async e=>{
+  e.preventDefault(); const err=$('#err'),okm=$('#okm'); err.hidden=true; okm.hidden=true;
+  const email=$('#em').value.trim(), pass=$('#pw').value;
+  $('#lbtn').disabled=true;
+  try{
+    const perfil=await AUTH.entrar(email,pass);
+    if(!perfil||perfil.rol!=='gestor'){ await AUTH.salir(); throw new Error('Esta cuenta no tiene acceso de gestor.'); }
+    me={id:perfil.id,nombre:perfil.nombre||'Gestor',email};
+    $('#pw').value=''; await start();
+  }catch(ex){ err.textContent=traducir(ex.message); err.hidden=false; }
+  $('#lbtn').disabled=false;
+});
+$('#forgot').addEventListener('click', async ()=>{
+  const email=$('#em').value.trim(), err=$('#err'),okm=$('#okm'); err.hidden=true; okm.hidden=true;
+  if(!email) return (err.textContent='Escribe tu correo arriba y vuelve a tocar «Olvidaste tu contraseña».', err.hidden=false);
+  try{ const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.href.split('#')[0]}); if(error)throw error;
+    okm.textContent='Te enviamos un correo para crear una nueva contraseña. Revisa tu bandeja (y spam).'; okm.hidden=false;
+  }catch(ex){ err.textContent=traducir(ex.message); err.hidden=false; }
+});
+function traducir(m){ m=(m||'').toLowerCase();
+  if(m.includes('invalid login')) return 'Correo o contraseña incorrectos.';
+  if(m.includes('email not confirmed')) return 'Confirma tu correo antes de entrar (revisa tu bandeja).';
+  if(m.includes('rate')||m.includes('too many')) return 'Demasiados intentos. Espera un momento.';
+  return m.charAt(0).toUpperCase()+m.slice(1); }
+
+async function logout(){ await AUTH.salir(); me=null; show('login'); }
+
+// Recuperación: si el usuario llega desde el correo, Supabase emite PASSWORD_RECOVERY.
+sb.auth.onAuthStateChange((ev)=>{ if(ev==='PASSWORD_RECOVERY'){ recovery=true; } });
+
+// ---- Navegación ----
+const NAV=[['Gestión',[['resumen','📊','Resumen'],['clientes','🗂️','Clientes']]],['Operación',[['soporte','🛟','Modo soporte'],['registro','🕑','Mi registro']]],['Cuenta',[['cuenta','🔑','Mi cuenta']]]];
+function side(){
+  $('#side').innerHTML=`<div class="brand"><div class="logo">◆</div><span>Panel <b>Gestor</b></span></div>`+
+    NAV.map(([g,it])=>`<div class="grp">${g}</div>`+it.map(([id,ic,n])=>`<button class="nv ${id===view?'on':''}" data-v="${id}">${ic} ${n}</button>`).join('')).join('')+
+    `<div class="me"><b>${esc(me.nombre)}</b><small>${esc(me.email)}</small><button class="btn btn-g btn-sm" data-logout style="width:100%">Cerrar sesión</button></div>`;
+}
+async function go(v){ if(recovery)v='cuenta'; if(v!==view)editing=null; view=v; side(); $('#side').classList.remove('open'); $('#acts').innerHTML=''; $('#view').innerHTML=await V[v](); scrollTo(0,0); }
+async function start(){ show('app'); try{await cargar();}catch(ex){toast('No pude cargar los clientes: '+ex.message);} go(recovery?'cuenta':'resumen'); }
+
+const H=(t,s)=>{$('#h').innerHTML=`<div><h1>${esc(t)}</h1>${s?`<p class="sub" style="margin:4px 0 0">${esc(s)}</p>`:''}</div>`;};
+
+// ---- Vistas ----
+const V={};
+const estados=[['activo','Activo'],['soporte','En soporte'],['pausado','Pausado'],['baja','Baja']];
+const estLabel=e=>(estados.find(x=>x[0]===e)||['','—'])[1];
+V.resumen=async ()=>{
+  H('Hola, '+me.nombre.split(' ')[0],'Tu agencia de un vistazo.'); $('#acts').innerHTML=`<button class="btn btn-p" data-v="clientes">Ver clientes</button>`;
+  const C=clientes, act=C.filter(c=>c.estado==='activo'||c.estado==='soporte');
+  const facturado=C.reduce((a,c)=>a+(+c.costo||0),0);
+  const mensual=C.filter(c=>c.estado!=='baja'&&c.ciclo==='mensual').reduce((a,c)=>a+(+c.soporte||0),0);
+  const pend=C.filter(c=>c.pago==='pendiente').reduce((a,c)=>a+(+c.costo||0),0);
+  return `<div class="grid4">
+      <div class="kpi"><b>${C.length}</b><small>Clientes</small></div>
+      <div class="kpi g"><b>${act.length}</b><small>Activos / soporte</small></div>
+      <div class="kpi"><b>${soles(facturado)}</b><small>Total facturado</small></div>
+      <div class="kpi w"><b>${soles(mensual)}</b><small>Soporte mensual</small></div></div>
+    ${pend?`<div class="note">⚠️ Tienes ${soles(pend)} en pagos pendientes de cobro.</div>`:''}
+    <div class="panel"><h3>Clientes recientes</h3><p class="d">Toca uno para ver todo su detalle.</p>
+      <div class="clients">${C.slice(0,4).map(clCard).join('')||'<div class="empty">Aún no tienes clientes. Agrega el primero en «Clientes».</div>'}</div></div>`;
+};
+function clCard(cl){return`<div class="cl"><div class="in"><h4>${esc(cl.negocio)} <span class="tag ${cl.estado}">${estLabel(cl.estado)}</span> <span class="tag ${cl.pago==='pagado'?'pg':'pend'}">${cl.pago==='pagado'?'Pagado':'Por cobrar'}</span></h4>
+  <div class="meta"><span>${esc(cl.rubro||'—')}</span><span>${soles(cl.costo)}</span>${+cl.soporte?`<span>+ ${soles(cl.soporte)}/mes</span>`:''}${cl.entregado?`<span>Entregado ${cl.entregado}</span>`:''}</div></div>
+  <div class="acts"><button class="btn btn-g btn-sm" data-open="${cl.id}">Abrir ficha</button>${cl.url?`<a class="btn btn-g btn-sm" href="${esc(cl.url)}" target="_blank" rel="noopener">Web ↗</a>`:''}</div></div>`;}
+let flt='todos';
+V.clientes=async ()=>{
+  H('Clientes','Cada web que creas, con su costo, soporte y versiones. Guardado en la nube.');
+  $('#acts').innerHTML=`<button class="btn btn-p" data-new>＋ Nuevo cliente</button>`;
+  if(editing)return clForm();
+  const f=clientes.filter(c=>flt==='todos'||c.estado===flt);
+  return `<div class="chips">${[['todos','Todos'],...estados].map(([k,n])=>`<button class="chip ${k===flt?'on':''}" data-flt="${k}">${n}</button>`).join('')}</div>
+    <div class="clients">${f.map(clCard).join('')||'<div class="empty">Nada por aquí.</div>'}</div>`;
+};
+function clForm(){
+  const n=editing==='new', cl=n?{negocio:'',rubro:'',estado:'activo',contacto:'',telefono:'',url:'',panel:'',costo:'',soporte:'',pago:'pendiente',ciclo:'mensual',entregado:new Date().toISOString().slice(0,10),notas:'',versiones:[]}:structuredClone(clientes.find(c=>c.id===editing));
+  const F=[['negocio','Negocio / empresa','text',1],['rubro','Rubro','text'],['estado','Estado','sel',0,estados],['pago','Pago','sel',0,[['pendiente','Por cobrar'],['pagado','Pagado']]],['contacto','Contacto','text'],['telefono','Teléfono / WhatsApp','text'],['url','URL de la web','url'],['panel','URL del panel','url'],['costo','Costo cobrado (S/)','num'],['soporte','Soporte (S/)','num'],['ciclo','Ciclo de soporte','sel',0,[['mensual','Mensual'],['anual','Anual'],['unico','Pago único'],['ninguno','Sin soporte']]],['entregado','Fecha de entrega','date']];
+  const fld=([k,l,t,full,opts])=>t==='sel'?`<label class="${full?'full':''}">${l}<select data-k="${k}">${opts.map(([a,b])=>`<option value="${a}" ${a===cl[k]?'selected':''}>${b}</option>`).join('')}</select></label>`:`<label class="${full?'full':''}">${l}<input type="${t==='num'?'number':t}" ${t==='num'?'step="any" min="0"':''} data-k="${k}" value="${esc(cl[k])}"></label>`;
+  return`<a class="back" data-cancel>← Volver</a><div class="panel"><h3>${n?'Nuevo cliente':'Editar '+esc(cl.negocio)}</h3>
+    <form class="form" id="cf">${F.map(fld).join('')}<label class="full">Notas<textarea data-k="notas" rows="3">${esc(cl.notas)}</textarea></label></form>
+    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn btn-p" data-save>Guardar</button><a class="btn btn-g" data-cancel>Cancelar</a>${!n?`<button class="btn btn-bad" data-del="${cl.id}" style="margin-left:auto">Eliminar</button>`:''}</div></div>
+    ${!n?verPanel(cl):''}`;
+}
+function verPanel(cl){
+  const vs=[...(cl.versiones||[])].sort((a,b)=>b.t-a.t);
+  return`<div class="panel"><h3>Versiones y cambios</h3><p class="d">Guarda un punto antes de cada cambio grande para poder volver atrás.</p>
+    <form class="form" id="vf" style="margin-bottom:14px"><label class="full">Describe el cambio<input data-k="etq" placeholder="Ej.: Nueva promo de verano"></label><label class="full">Nota (opcional)<input data-k="nota"></label><button class="btn btn-g" data-ver="${cl.id}" type="button" style="width:fit-content">＋ Guardar versión actual</button></form>
+    ${vs.map((v,i)=>`<div class="ver ${i===0?'now':''}"><span class="dot"></span><div class="vi"><b>${esc(v.etq)}</b>${i===0?' <span class="tag activo">Actual</span>':''}<br><small>${fecha(v.t)}${v.nota?' · '+esc(v.nota):''}</small></div>${i>0?`<button class="btn btn-g btn-sm" data-rollback="${cl.id}:${v.id}">Volver a esta</button>`:''}</div>`).join('')||'<small style="color:var(--mu)">Sin versiones guardadas.</small>'}</div>
+    <div class="panel"><h3>Base de datos</h3><p class="d">Esta web ya guarda sus datos en Supabase (la nube). Desde aquí abres su panel para darle soporte.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">${cl.panel?`<a class="btn btn-g btn-sm" href="${esc(cl.panel)}" target="_blank" rel="noopener">Abrir panel del cliente ↗</a>`:''}<button class="btn btn-g btn-sm" data-export="${cl.id}">Exportar ficha (JSON)</button></div></div>`;
+}
+V.soporte=async ()=>{
+  H('Modo soporte','Entra a la web de un cliente para darle soporte o ayuda.');
+  const on=cfg().soporteSinRegistro;
+  return `<div class="note">🕶️ <div><b>Soporte sin dejar rastro.</b> Cuando entras al panel de un cliente, tus cambios no aparecen en el registro de actividad de ese cliente. Tú llevas tu propio registro privado en «Mi registro».</div></div>
+    <div class="panel"><label class="row-sw"><span class="sw ${on?'on':''}" id="swSop"></span><span style="color:var(--tx);font-weight:600">Modo soporte silencioso activado</span></label></div>
+    <div class="panel"><h3>Accesos rápidos</h3><p class="d">Abre el panel de cualquier cliente en una pestaña nueva.</p>
+      <div class="tbl"><table><tr><th>Cliente</th><th>Estado</th><th></th></tr>${clientes.map(cl=>`<tr><td><b>${esc(cl.negocio)}</b></td><td><span class="tag ${cl.estado}">${estLabel(cl.estado)}</span></td><td style="text-align:right;white-space:nowrap">${cl.panel?`<a class="btn btn-g btn-sm" href="${esc(cl.panel)}" target="_blank" rel="noopener" data-sop="${cl.id}">Entrar al panel ↗</a>`:'<small style="color:var(--mu)">sin panel</small>'} ${cl.url?`<a class="btn btn-g btn-sm" href="${esc(cl.url)}" target="_blank" rel="noopener">Ver web ↗</a>`:''}</td></tr>`).join('')||'<tr><td colspan="3" class="empty">Sin clientes.</td></tr>'}</table></div></div>`;
+};
+V.registro=async ()=>{H('Mi registro','Tu historial privado en este dispositivo.'); const L=logGet(); $('#acts').innerHTML=L.length?`<button class="btn btn-g" data-clearlog>Borrar</button>`:'';
+  return `<div class="panel tbl"><table><tr><th>Fecha</th><th>Acción</th></tr>${L.map(l=>`<tr><td style="white-space:nowrap">${fecha(l.t)}</td><td>${esc(l.m)}</td></tr>`).join('')||'<tr><td colspan="2" class="empty">Sin movimientos.</td></tr>'}</table></div>`;};
+V.cuenta=async ()=>{H('Mi cuenta');
+  return `${recovery?'<div class="note">🔑 Crea tu nueva contraseña para recuperar el acceso.</div>':''}
+    <div class="panel" style="max-width:520px"><h3>${recovery?'Nueva contraseña':'Cambiar contraseña'}</h3><p class="d">Mínimo 8 caracteres con letras y números. La puedes cambiar cuando quieras; no es obligatorio.</p>
+    <form class="form" id="pf" style="grid-template-columns:1fr"><label>Nueva contraseña<input type="password" id="p1" autocomplete="new-password"></label><label>Repite la nueva<input type="password" id="p2" autocomplete="new-password"></label><button class="btn btn-p">Guardar contraseña</button></form></div>
+    <div class="panel" style="max-width:520px"><h3>Correo</h3><p class="d">Tu acceso es <b>${esc(me.email)}</b>. Si lo olvidas, usa «¿Olvidaste tu contraseña?» en la pantalla de inicio: te llega un correo para crear una nueva.</p></div>`;
+};
+
+// ---- Acciones ----
+const passOK=p=>p.length>=8&&/[A-Za-z]/.test(p)&&/\d/.test(p);
+document.addEventListener('submit', async e=>{
+  if(e.target.id!=='pf')return; e.preventDefault();
+  const a=$('#p1').value,b=$('#p2').value;
+  if(a!==b)return toast('Las contraseñas no coinciden');
+  if(!passOK(a))return toast('Usa 8+ caracteres con letras y números');
+  try{ await AUTH.cambiarPass(a); recovery=false; touch('Cambió su contraseña'); toast('Contraseña actualizada ✓'); go('resumen'); }
+  catch(ex){ toast(traducir(ex.message)); }
+});
+function collect(fm){const o={};$$('[data-k]',fm).forEach(el=>{const k=el.dataset.k;o[k]=el.type==='number'?(el.value===''?null:+el.value):el.value.trim();});return o;}
+document.addEventListener('click', async e=>{
+  const el=e.target.closest('button,a,[data-flt],.row-sw'); if(!el||!me)return;
+  const d=el.dataset;
+  try{
+    if(d.v)return go(d.v);
+    if('logout'in d)return logout();
+    if(el.id==='mb')return $('#side').classList.toggle('open');
+    if(el.id==='swSop'){const c=cfg();c.soporteSinRegistro=!c.soporteSinRegistro;setCfg(c);return go('soporte');}
+    if(d.flt){flt=d.flt;return go('clientes');}
+    if('new'in d){editing='new';return go('clientes');}
+    if(d.open){editing=d.open;view='clientes';return go('clientes');}
+    if('cancel'in d){editing=null;return go('clientes');}
+    if('save'in d){ const o=collect($('#cf')); if(!o.negocio)return toast('Ponle nombre al negocio');
+      if(editing==='new'){ o.versiones=[{id:crypto.randomUUID(),t:Date.now(),etq:'Alta del cliente',nota:''}]; }
+      else{ o.id=editing; }
+      await guardar(o); touch(`${editing==='new'?'Agregó':'Editó'} al cliente ${o.negocio}`); await cargar(); editing=null; toast('Guardado ✓'); return go('clientes'); }
+    if(d.del){ const c=clientes.find(x=>x.id===d.del); if(!confirm(`¿Eliminar a ${c.negocio}? No se puede deshacer.`))return; await borrar(d.del); touch(`Eliminó al cliente ${c.negocio}`); await cargar(); editing=null; toast('Eliminado'); return go('clientes'); }
+    if(d.ver){ const c=clientes.find(x=>x.id===d.ver), etq=$('#vf [data-k="etq"]').value.trim()||'Punto de respaldo', nota=$('#vf [data-k="nota"]').value.trim(); const vs=[...(c.versiones||[]),{id:crypto.randomUUID(),t:Date.now(),etq,nota}]; await guardar({id:c.id,versiones:vs}); touch(`Guardó versión «${etq}» de ${c.negocio}`); await cargar(); toast('Versión guardada ✓'); return go('clientes'); }
+    if(d.rollback){ const[cid,vid]=d.rollback.split(':'),c=clientes.find(x=>x.id===cid),v=c.versiones.find(x=>x.id===vid); if(!confirm(`¿Volver a la versión «${v.etq}»? Se marcará como la actual.`))return; const vs=[...c.versiones,{id:crypto.randomUUID(),t:Date.now(),etq:'↩ '+v.etq,nota:'Restaurada'}]; await guardar({id:cid,versiones:vs}); touch(`Restauró ${c.negocio} a «${v.etq}»`); await cargar(); toast('Restaurada ✓'); return go('clientes'); }
+    if(d.export){ const c=clientes.find(x=>x.id===d.export),a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(c,null,2)],{type:'application/json'})); a.download=c.negocio.replace(/\W+/g,'-')+'.json'; a.click(); return; }
+    if(d.sop){ const c=clientes.find(x=>x.id===d.sop); if(cfg().soporteSinRegistro)touch(`Entró en modo soporte a ${c.negocio}`); return; }
+    if('clearlog'in d){ if(!confirm('¿Borrar tu registro privado de este dispositivo?'))return; localStorage.removeItem(LOG); return go('registro'); }
+  }catch(ex){ toast(ex.message||'Error'); }
+});
+
+// ---- Arranque: ¿ya hay sesión? ----
+(async()=>{
+  show('loading');
+  try{
+    const perfil=await AUTH.actual();
+    if(perfil&&perfil.rol==='gestor'){ const {data}=await sb.auth.getUser(); me={id:perfil.id,nombre:perfil.nombre||'Gestor',email:data.user?.email||''}; return start(); }
+  }catch(_){}
+  show('login');
+})();
+})();
+</script>
+</body>
+</html>
