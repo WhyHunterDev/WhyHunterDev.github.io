@@ -56,14 +56,14 @@
         hero: { eyebrow: 'Gimnasio · Lima, Perú', l1: 'Forja tu', l2: 'mejor', l3: 'versión', texto: 'Fuerza, disciplina y una comunidad que te empuja a más. Abiertos desde las 5 de la mañana.', imagen: 'img/hero.jpg' },
         marquee: { activo: true, mensajes: ['Forja tu mejor versión', 'Lun – Sáb 5am a 11pm', 'Cafetín fit en todas las sedes', 'Asesoría nutricional incluida', 'Todas las clases incluidas'] },
         vision: { eyebrow: 'Nuestra visión', titulo: 'Más que un gym,', acento: 'una familia', texto: 'Queremos que cada persona que entra a Santos Strength encuentre un lugar donde se sienta acompañada, motivada y orgullosa de su progreso. Entrenamos fuerte, pero sobre todo entrenamos juntos.', imagen: 'img/comunidad.jpg',
-          pilares: [{ t: 'Acompañamiento real', d: 'Tu coach te arma la rutina y te corrige en sala.' }, { t: 'Comunidad', d: 'Eventos, retos y gente que entrena con tu misma hambre.' }, { t: 'Espacios impecables', d: 'Limpieza constante, duchas con agua caliente y lockers.' }] },
+          pilares: [{ t: 'Acompañamiento real', d: 'Tu entrenador te arma la rutina y te corrige en sala.' }, { t: 'Comunidad', d: 'Eventos, retos y gente que entrena con tu misma hambre.' }, { t: 'Espacios impecables', d: 'Limpieza constante, duchas con agua caliente y lockers.' }] },
         stats: [{ n: '2', t: 'Sedes en Lima' }, { n: '18', t: 'Horas al día' }, { n: '4', t: 'Tipos de clases' }, { n: '5am', t: 'Abrimos desde' }],
         videos: { eyebrow: 'Santos en redes', titulo: 'Así se vive', acento: 'Santos', texto: 'Entrenamiento, humor, promos y comunidad. Toca un video para verlo con sonido.' },
         incluye: [
           { i: '🥗', t: 'Asesoría nutricional', d: 'Enfocada en tu objetivo.' }, { i: '🎟️', t: 'Todas las clases', d: 'Funcional, baile, cardio y máquinas.' },
           { i: '⏱️', t: 'Sin límite de tiempo', d: 'Quédate lo que quieras.' }, { i: '🚿', t: 'Duchas con agua caliente', d: 'En todas las sedes.' },
           { i: '🔐', t: 'Lockers', d: 'Tus cosas seguras.' }, { i: '✨', t: 'Limpieza constante', d: 'Personal dedicado a sala y máquinas.' },
-          { i: '🏅', t: 'Coaches calificados', d: 'En cada sede.' }, { i: '🥤', t: 'Cafetín fit', d: 'Batidos y comida con macros.' }
+          { i: '🏅', t: 'Entrenadores calificados', d: 'En cada sede.' }, { i: '🥤', t: 'Cafetín fit', d: 'Batidos y comida con macros.' }
         ],
         aprobacion: false,
         redes: { tiktok: 'https://www.tiktok.com/@santos.strength7', instagram: 'https://www.instagram.com/gymsantosstrength/', facebook: 'https://www.facebook.com/p/Santos-Strength-61557276908804/' }

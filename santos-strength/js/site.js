@@ -127,7 +127,7 @@
     <section class="sec alt"><div class="wrap">
       <div class="row-hd"><div><span class="eyebrow rv">Explora</span><h2 class="h2 rv">Todo lo que <em>necesitas</em></h2></div></div>
       <div class="bento">
-        <a class="tile big rv" href="#/coaches"><img src="${esc(await U((data.entrenadores[0] || {}).foto || 'img/coach.jpg'))}" alt="" loading="lazy"><span class="go">→</span><small>${coachN} coaches${sede !== 'todas' ? ' en ' + esc(sedeName(sede)) : ''}</small><h3>Conoce a tu coach</h3><p>Rutinas semi personalizadas y asesoría nutricional según tu objetivo.</p></a>
+        <a class="tile big rv" href="#/coaches"><img src="${esc(await U((data.entrenadores[0] || {}).foto || 'img/coach.jpg'))}" alt="" loading="lazy"><span class="go">→</span><small>${coachN} entrenadores${sede !== 'todas' ? ' en ' + esc(sedeName(sede)) : ''}</small><h3>Conoce a tu entrenador</h3><p>Rutinas semi personalizadas y asesoría nutricional según tu objetivo.</p></a>
         <a class="tile ytile rv" href="#/planes"><span class="go" style="background:#000;color:var(--y)">→</span><small>Planes desde</small><div class="price">${soles(Math.round(precioDe(plan) / plan.meses))}<span style="font-size:1rem;font-family:var(--fb);font-weight:700"> /mes</span></div><p>Con el plan ${esc(plan.nombre)}. Todas las clases incluidas.</p></a>
         <a class="tile rv" href="#/cafetin"><img src="${esc(await U(cafeImg))}" alt="" loading="lazy"><span class="go">→</span><small>Cafetín fit</small><h3>Come como entrenas</h3></a>
         <a class="tile rv" href="#/sedes"><img src="${esc(await U((sedeObj(sede) || data.sedes[0] || {}).foto || 'img/interior.jpg'))}" alt="" loading="lazy"><span class="go">→</span><small>${data.sedes.length} sedes</small><h3>Encuéntranos</h3></a>
@@ -177,7 +177,7 @@
         <ul><li>Lunes a sábado, todo el día</li><li>Todas las clases incluidas</li><li>Rutina + asesoría nutricional</li></ul>
         <button class="btn ${p.destacado ? '' : 'btn-o'}" data-wa data-plan="${esc(p.nombre)}">Quiero ${esc(p.nombre)}</button></article>`;
     }).join('');
-    return head('Membresías', 'Mientras más largo,', 'más ahorras', 'Todos los planes incluyen todas las clases, rutina armada por tu coach y asesoría nutricional.') + `
+    return head('Membresías', 'Mientras más largo,', 'más ahorras', 'Todos los planes incluyen todas las clases, rutina armada por tu entrenador y asesoría nutricional.') + `
       <section class="sec" style="padding-top:12px"><div class="wrap">
         <div class="plans">${cards}</div>
         <div class="pase rv"><div><h4>Pase diario</h4><p>${esc(data.notaPlanes || '')}</p></div><div class="pp"><div><b>${soles(data.pase.socio)}</b><small>Socios</small></div><div><b>${soles(data.pase.noSocio)}</b><small>No socios</small></div></div></div>
@@ -185,12 +185,12 @@
       <section class="sec alt"><div class="wrap"><span class="eyebrow rv">Todos los planes incluyen</span><h2 class="h2 rv">Todo <em>incluido</em></h2>
         <div class="inc">${data.config.incluye.map((x) => `<div class="inc-i rv"><i>${esc(x.i)}</i><h4>${esc(x.t)}</h4><p>${esc(x.d)}</p></div>`).join('')}</div></div></section>
       <section class="sec"><div class="wrap quiz rv">
-        <div><span class="eyebrow">30 segundos</span><h2 class="h2">¿Cuál es tu <em>objetivo?</em></h2><p class="lead">Elige y te decimos cómo empezar: plan, coach y qué comer en el cafetín.</p>
+        <div><span class="eyebrow">30 segundos</span><h2 class="h2">¿Cuál es tu <em>objetivo?</em></h2><p class="lead">Elige y te decimos cómo empezar: plan, entrenador y qué comer en el cafetín.</p>
           <div class="qopts"><button data-goal="definicion"><b>🔥</b>Bajar grasa</button><button data-goal="volumen"><b>💪</b>Ganar músculo</button><button data-goal="salud"><b>❤️</b>Salud y energía</button></div></div>
         <div class="qres" id="qres"><p style="color:var(--mu);text-align:center">Toca una opción</p></div>
       </div></section>`;
   };
-  const goals = { definicion: ['Bajar grasa', /grasa|cardio|funcional/i, 'Cardio y funcional 4–5 veces por semana con la rutina de tu coach.'], volumen: ['Ganar músculo', /fuerza|hipertrofia/i, 'Máquinas y pesas 4–5 veces por semana con progresión de cargas.'], salud: ['Salud y energía', /funcional|baile|cardio/i, 'Baile, funcional y cardio para moverte con energía.'] };
+  const goals = { definicion: ['Bajar grasa', /grasa|cardio|funcional/i, 'Cardio y funcional 4–5 veces por semana con la rutina de tu entrenador.'], volumen: ['Ganar músculo', /fuerza|hipertrofia/i, 'Máquinas y pesas 4–5 veces por semana con progresión de cargas.'], salud: ['Salud y energía', /funcional|baile|cardio/i, 'Baile, funcional y cardio para moverte con energía.'] };
   function renderQuiz(g) {
     $$('.qopts button').forEach((b) => b.classList.toggle('on', b.dataset.goal === g));
     const [t, re, txt] = goals[g], plan = data.planes.find((p) => p.destacado) || data.planes[0];
@@ -226,7 +226,7 @@
     const list = data.entrenadores.filter(enSede);
     const cards = await Promise.all(list.map(async (c) => `<a class="coach rv" href="#/coach/${c.id}">${c.foto ? `<img src="${esc(await U(c.foto))}" alt="${esc(c.nombre)}" style="object-position:${esc(c.pos || 'center')}" loading="lazy">` : `<div class="ini">${esc((c.nombre.replace(/^coach\s+/i, '')[0] || 'S').toUpperCase())}</div>`}
       <span class="sd tag y">${esc(sedeName(c.sede))}</span><div class="c"><h3>${esc(c.nombre)}</h3><div class="es">${esc(c.especialidad)}</div><span class="vp">Ver perfil ${c.video ? '· ▶ video' : ''} →</span></div></a>`));
-    return head('Tu equipo', 'Nuestros', 'coaches', 'Entrenadores calificados en cada sede. Toca un coach para conocerlo.', sedeChips()) +
+    return head('Tu equipo', 'Nuestros', 'entrenadores', 'Entrenadores y profesores calificados en cada sede. Toca uno para conocerlo.', sedeChips()) +
       `<section class="sec" style="padding-top:0"><div class="wrap"><div class="coaches">${cards.join('') || '<div class="empty">Pronto presentaremos al equipo de esta sede.</div>'}</div></div></section>`;
   };
 
@@ -370,7 +370,7 @@
     $$('#tabs a,#bbar [data-r]').forEach((a) => a.classList.toggle('on', a.dataset.r === tabKey || (a.id === 'moreBtn' && ['clases', 'sedes', 'galeria', 'promos'].includes(tabKey))));
     moveInd();
     app.innerHTML = `<div class="page">${await P[key](arg)}</div>`;
-    document.title = (key === 'inicio' ? '' : ({ planes: 'Planes', coaches: 'Coaches', coach: 'Coach', clases: 'Horario de clases', cafetin: 'Cafetín fit', sedes: 'Sedes', galeria: 'Galería', promos: 'Promos' }[key] + ' · ')) + 'Santos Strength';
+    document.title = (key === 'inicio' ? '' : ({ planes: 'Planes', coaches: 'Entrenadores', coach: 'Entrenador', clases: 'Horario de clases', cafetin: 'Cafetín fit', sedes: 'Sedes', galeria: 'Galería', promos: 'Promos' }[key] + ' · ')) + 'Santos Strength';
     if (changed && !keepScroll) scrollTo(0, 0); else scrollTo(0, y);
     afterRender();
     if (key === 'clases' && innerWidth < 900) { const hc = $('#clHoy'); if (hc) hc.parentNode.scrollLeft = hc.offsetLeft - 16; }
