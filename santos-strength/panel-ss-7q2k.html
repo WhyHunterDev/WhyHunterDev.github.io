@@ -121,6 +121,7 @@ th{color:var(--mu);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase}
     <label>Contraseña<input id="pw" type="password" required autocomplete="current-password"></label>
     <p class="err" id="err" hidden></p>
     <p class="ok" id="okm" hidden style="color:var(--ok);font-size:.84rem"></p>
+    <div id="forgotBox" hidden style="border:1px solid var(--line,#2a2a2a);border-radius:12px;padding:12px 14px;font-size:.84rem;line-height:1.45"><p><b>¿Eres de recepción o cafetería?</b><br>Comunícate con tu administrador para que te dé una clave temporal.</p><p style="margin-top:8px"><b>¿Eres administrador?</b><br>Escribe tu correo arriba y te enviamos un enlace para crear una nueva.</p><button type="button" class="btn" id="forgotSend" style="margin-top:8px;border:1px solid var(--y);color:var(--y);padding:.55rem 1rem;border-radius:10px;background:transparent">Enviar enlace a mi correo</button></div>
     <button class="btn btn-y" type="submit" id="lbtn">Ingresar</button>
     <button type="button" id="forgotLink" style="background:none;color:var(--y);font-size:.82rem">¿Olvidaste tu contraseña?</button>
     <p class="lock">🔒 Contraseñas cifradas · cierre automático por inactividad</p>
@@ -138,6 +139,8 @@ th{color:var(--mu);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="backend/conexion.js?v=10"></script>
 <script src="js/store.js?v=10"></script>
-<script src="js/panel.js?v=12"></script>
+<script src="js/panel.js?v=13"></script>
+<style>.pw-wrap{position:relative;display:block}.pw-wrap input{width:100%;padding-right:2.6rem!important}.pw-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none!important;border:0;cursor:pointer;font-size:1rem;line-height:1;opacity:.75;padding:6px;box-shadow:none!important}.pw-eye:hover{opacity:1}</style>
+<script>/* Ojo para ver la contraseña */(function(){function ojos(){document.querySelectorAll('input[type=password]:not([data-ojo])').forEach(function(i){i.setAttribute('data-ojo','1');var w=document.createElement('span');w.className='pw-wrap';i.parentNode.insertBefore(w,i);w.appendChild(i);var b=document.createElement('button');b.type='button';b.className='pw-eye';b.textContent='👁';b.title='Mostrar contraseña';b.setAttribute('aria-label','Mostrar contraseña');b.addEventListener('click',function(e){e.preventDefault();var s=i.type==='password';i.type=s?'text':'password';b.textContent=s?'🙈':'👁';b.title=s?'Ocultar contraseña':'Mostrar contraseña';i.focus();});w.appendChild(b);});}ojos();new MutationObserver(ojos).observe(document.body,{childList:true,subtree:true});})();</script>
 </body>
 </html>

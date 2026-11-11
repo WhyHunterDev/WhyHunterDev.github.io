@@ -6,7 +6,7 @@
   const B = () => window.SS_BACKEND;                 // nube (Supabase) si está configurada
   let data = await SS.load(), me = null, view = 'resumen', editing = null, gpage = 1;
   data.actividad = data.actividad || [];
-  const IDLE_MIN = 15, MAX_TRY = 5, LOCK_MIN = 5;
+  const IDLE_MIN = 60, MAX_TRY = 5, LOCK_MIN = 5;
   const rolLabel = { admin: 'Administrador', recepcion: 'Recepción', cafetin: 'Cafetín', gestor: 'Gestor' };
 
   // ---------- Utilidades ----------
@@ -160,12 +160,13 @@
   async function logout(msg) { if (B()) { try { await B().auth.salir(); } catch (_) {} } sessionStorage.removeItem('ss-ses'); me = null; $('#app').style.display = 'none'; $('#login').style.display = ''; if (msg) { $('#err').textContent = msg; $('#err').hidden = false; } }
   // Recuperación de contraseña por correo (solo en modo nube).
   const forgotBtn = $('#forgotLink');
-  if (forgotBtn) { if (!B()) forgotBtn.hidden = true; else forgotBtn.addEventListener('click', async () => {
+  if (forgotBtn) { if (!B()) forgotBtn.hidden = true; else { forgotBtn.addEventListener('click', () => { const fb = $('#forgotBox'); fb.hidden = !fb.hidden; $('#err').hidden = true; $('#okm').hidden = true; });
+  $('#forgotSend').addEventListener('click', async () => {
     const em = $('#em').value.trim(), err = $('#err'), okm = $('#okm'); err.hidden = true; okm.hidden = true;
     if (!em) { err.textContent = 'Escribe tu correo arriba y vuelve a tocar el enlace.'; err.hidden = false; return; }
-    try { const { error } = await B().sb.auth.resetPasswordForEmail(em, { redirectTo: location.href.split('#')[0] }); if (error) throw error; okm.textContent = 'Te enviamos un correo para crear una nueva contraseña (revisa spam).'; okm.hidden = false; }
+    try { const { error } = await B().sb.auth.resetPasswordForEmail(em, { redirectTo: location.href.split('#')[0] }); if (error) throw error; okm.textContent = 'Si ese correo es de un administrador, te llegará un enlace para crear una nueva contraseña (revisa spam).'; okm.hidden = false; $('#forgotBox').hidden = true; }
     catch (ex) { err.textContent = ex.message || 'No se pudo enviar.'; err.hidden = false; }
-  }); }
+  }); } }
   if (B()) B().sb.auth.onAuthStateChange((ev) => { if (ev === 'PASSWORD_RECOVERY') { (async () => { try { const p = await B().auth.actual(); if (p) { const { data: au } = await B().sb.auth.getUser(); me = asMe(p, au.user?.email || ''); data = await SS.load(); data.actividad = data.actividad || []; start(); go('cuenta'); toast('Crea tu nueva contraseña'); } } catch (_) {} })(); } });
   let idleT; const bump = () => { try { sessionStorage.setItem('ss-ses', JSON.stringify({ id: me.id, t: Date.now() })); } catch (_) {} clearTimeout(idleT); idleT = setTimeout(() => logout('Sesión cerrada por inactividad.'), IDLE_MIN * 60000); };
   ['click', 'keydown', 'scroll', 'touchstart'].forEach((ev) => addEventListener(ev, () => me && bump(), { passive: true }));
