@@ -106,6 +106,7 @@ th{color:var(--mu);font-size:.66rem;letter-spacing:.08em;text-transform:uppercas
 .clavebox{background:rgba(0,230,168,.08);border:1px solid rgba(0,230,168,.35);border-radius:14px;padding:14px;margin-bottom:14px;display:grid;gap:8px;font-size:.88rem}.clavebox .cv{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.clavebox code{font-family:var(--mono);font-size:1.05rem;background:rgba(0,0,0,.4);padding:.45rem .7rem;border-radius:9px;color:var(--ok);letter-spacing:.04em}.clavebox small{color:var(--mu)}
 .uso-grid{display:grid;grid-template-columns:minmax(200px,1fr) 2fr;gap:18px}@media(max-width:760px){.uso-grid{grid-template-columns:1fr}}.uso-grid h4{font-size:.8rem;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}.uso-bar{display:flex;justify-content:space-between;padding:.45rem .7rem;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;font-size:.86rem}.uso-bar b{font-family:var(--mono);color:var(--ac2)}.uso-list{display:grid;gap:6px;font-size:.84rem;max-height:340px;overflow:auto}.uso-list small{color:var(--mu);font-family:var(--mono);font-size:.72rem}.err{border:1px solid var(--line);border-radius:10px;padding:.55rem .7rem;background:rgba(255,90,106,.04)}.err summary{cursor:pointer;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}.err pre{white-space:pre-wrap;font-family:var(--mono);font-size:.72rem;color:#cbd;margin-top:8px;max-height:220px;overflow:auto}
 .bk-kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.bk-kpi{background:#0e0e12;border:1px solid var(--line);border-radius:12px;padding:12px 16px;min-width:140px}.bk-kpi small{color:var(--mu);font-size:.78rem}.bk-kpi b{display:block;font-size:1.6rem;font-weight:800;font-family:var(--mono)}.bk-list{display:grid;gap:10px}.bk-cli{border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02);overflow:hidden}.bk-cli[open]{border-color:var(--line2);background:rgba(124,108,255,.04)}.bk-cli summary{list-style:none;display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}.bk-cli summary::-webkit-details-marker{display:none}.bk-av{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-weight:800;background:linear-gradient(135deg,var(--ac),var(--ac2));color:#07070b;flex:none}.bk-info{flex:1;min-width:0;display:grid}.bk-info small{color:var(--mu);font-size:.78rem}.bk-cli .tbl{padding:0 14px 12px}
+.bks-list{display:grid;gap:10px}.bks{border:1px solid var(--line2);border-radius:14px;padding:12px 14px;background:rgba(255,176,32,.03)}.bks.igual{background:rgba(255,255,255,.015);border-color:var(--line);opacity:.85}.bks-h{display:flex;align-items:center;gap:12px;cursor:pointer;color:var(--tx);font-size:.9rem}.bks-h input{width:18px;height:18px;flex:none;accent-color:var(--ac)}.bks-ico{font-size:1.2rem}.bks-t{flex:1;display:grid}.bks-t small{color:var(--mu);font-weight:500}.bks-d{margin-top:10px}.bks-d summary{cursor:pointer;color:var(--ac);font-size:.82rem;font-weight:600}.bkd{list-style:none;display:grid;gap:8px;margin-top:8px;font-size:.84rem}.bkd li{padding:8px 10px;border-radius:10px;border:1px solid var(--line)}.bkd-add{border-left:3px solid var(--ok)!important}.bkd-del{border-left:3px solid var(--bad)!important}.bkd-mod{border-left:3px solid var(--warn)!important}.bkd-campos{display:grid;gap:6px;margin-top:6px}.bkd-campos div{display:grid;grid-template-columns:minmax(120px,200px) 1fr 1fr;gap:8px;align-items:start;font-size:.78rem}@media(max-width:700px){.bkd-campos div{grid-template-columns:1fr}}.bkd-campos code{font-family:var(--mono);color:var(--mu);word-break:break-all}.bkd-hoy{color:#ffb3bb;word-break:break-word}.bkd-cp{color:#9ff3d6;word-break:break-word}.bks-json{width:100%;min-height:220px;font-family:var(--mono);font-size:.76rem;line-height:1.45;white-space:pre}.bks-safe{display:flex;gap:8px;align-items:center;margin-top:14px;color:var(--tx);font-size:.86rem}.bks-safe input{width:18px;height:18px;accent-color:var(--ac)}
 .note{background:rgba(124,108,255,.08);border:1px solid rgba(124,108,255,.25);color:#cfc7ff;border-radius:12px;padding:.8rem 1rem;font-size:.85rem;margin-bottom:16px;display:flex;gap:.6rem;align-items:flex-start}
 .sw{position:relative;width:42px;height:24px;border-radius:999px;background:#333;transition:.2s;flex:none}
 .sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
@@ -458,9 +459,62 @@ async function restaurarBackup(ts,sid){
   for(const r of data){ const {error:e2}=await sb.from('contenido').upsert({sitio_id:r.sitio_id,clave:r.clave,valor:r.valor}); if(e2)throw e2; }
   return data.length;
 }
+let bkPreview=null;
+const BK_SEC={config:['🎨','Inicio, textos, tema y ajustes'],sedes:['📍','Sedes (WhatsApp, horarios, cafetín)'],planes:['💳','Planes y precios'],pase:['🎟️','Pase diario'],notaPlanes:['📝','Nota de planes'],entrenadores:['🏋️','Coaches'],cafetin:['🥤','Cafetín (productos y combos)'],publicaciones:['📣','Promos y eventos'],galeria:['🎬','Galería']};
+const bkLabel=x=>x&&typeof x==='object'?(x.titulo||x.nombre||x.negocio||x.id||'(sin nombre)'):String(x);
+const bkVal=v=>{ if(v===null||v===undefined||v==='') return '∅ vacío'; if(typeof v==='boolean') return v?'Sí':'No';
+  if(typeof v==='object') return Array.isArray(v)?`[${v.length} elementos]`:'{…}';
+  const t=String(v); if(/^(https?:|idb:|img\/|vid\/)/.test(t)&&/\.(jpe?g|png|webp|gif|mp4|webm)|idb:/i.test(t)) return '🖼️ '+t.split('/').pop().slice(0,40); return t.length>90?t.slice(0,90)+'…':t; };
+function bkFlat(o,p='',out={}){ if(o&&typeof o==='object'&&!Array.isArray(o)){ for(const k of Object.keys(o)) bkFlat(o[k],p?p+'.'+k:k,out); }
+  else if(Array.isArray(o)&&o.some(x=>x&&typeof x==='object')){ o.forEach((x,i)=>bkFlat(x,(p?p+'.':'')+(x&&x.id?x.id:i),out)); }
+  else out[p]=Array.isArray(o)?o.join(' | '):o; return out; }
+function bkDiff(actual,copia){
+  const L=[];
+  const esLista=v=>Array.isArray(v)&&v.every(x=>x&&typeof x==='object'&&x.id);
+  if(esLista(actual)||esLista(copia)){
+    const A=new Map((actual||[]).map(x=>[x.id,x])), C=new Map((copia||[]).map(x=>[x.id,x]));
+    for(const [id,x] of C){ if(!A.has(id)) L.push(['add',`Volvería: «${bkLabel(x)}»`]); }
+    for(const [id,x] of A){ if(!C.has(id)) L.push(['del',`Se quitaría: «${bkLabel(x)}» (existe hoy, no estaba en la copia)`]); }
+    for(const [id,x] of C){ const y=A.get(id); if(!y||JSON.stringify(x)===JSON.stringify(y)) continue;
+      const fa=bkFlat(y), fc=bkFlat(x), ks=[...new Set([...Object.keys(fa),...Object.keys(fc)])].filter(k=>JSON.stringify(fa[k])!==JSON.stringify(fc[k]));
+      L.push(['mod',`Cambia «${bkLabel(x)}»`,ks.slice(0,12).map(k=>[k,fa[k],fc[k]])]); }
+    if(!L.length&&JSON.stringify((actual||[]).map(x=>x.id))!==JSON.stringify((copia||[]).map(x=>x.id))) L.push(['mod','Cambia el orden de los elementos',[]]);
+    return L;
+  }
+  const fa=bkFlat(actual), fc=bkFlat(copia);
+  for(const k of [...new Set([...Object.keys(fa),...Object.keys(fc)])]){ if(JSON.stringify(fa[k])!==JSON.stringify(fc[k])) L.push(['mod',k||'(valor)',[[k,fa[k],fc[k]]]]); }
+  return L;
+}
+async function leerPreview(ts,sid){
+  const {data:cp,error}=await sb.from('backups').select('clave,valor').eq('creado',ts).eq('sitio_id',sid); if(error)throw error;
+  const {data:ac,error:e2}=await sb.from('contenido').select('clave,valor').eq('sitio_id',sid); if(e2)throw e2;
+  const A={}; (ac||[]).forEach(r=>A[r.clave]=r.valor); return {copia:cp||[],actual:A};
+}
+async function vistaPreview(){
+  const pv=bkPreview; let d; try{ d=await leerPreview(pv.ts,pv.sid); }catch(ex){ bkPreview=null; return `<div class="note">No pude leer la copia: ${esc(ex.message)}</div>`; }
+  const orden=Object.keys(BK_SEC); d.copia.sort((a,b)=>(orden.indexOf(a.clave)+99)%199-(orden.indexOf(b.clave)+99)%199);
+  let nCamb=0;
+  const secs=d.copia.map(r=>{
+    const [ico,nom]=BK_SEC[r.clave]||['📦',r.clave], difs=bkDiff(d.actual[r.clave],r.valor), igual=!difs.length; if(!igual)nCamb++;
+    const lista=difs.slice(0,40).map(([t,txt,campos])=>`<li class="bkd-${t}"><b>${esc(txt)}</b>${campos&&campos.length?`<div class="bkd-campos">${campos.map(([k,a,c])=>`<div><code>${esc(k)}</code><span class="bkd-hoy">Hoy: ${esc(bkVal(a))}</span><span class="bkd-cp">Copia: ${esc(bkVal(c))}</span></div>`).join('')}</div>`:''}</li>`).join('')+(difs.length>40?`<li>… y ${difs.length-40} cambios más</li>`:'');
+    return `<div class="bks ${igual?'igual':''}"><label class="bks-h"><input type="checkbox" data-bksec="${esc(r.clave)}" ${igual?'':'checked'}><span class="bks-ico">${ico}</span><span class="bks-t"><b>${esc(nom)}</b><small>${igual?'Sin cambios: hoy está igual que en la copia':difs.length+' cambio'+(difs.length===1?'':'s')+' si restauras'}</small></span><span class="tag ${igual?'activo':'pend'}">${igual?'Igual':'Cambia'}</span></label>
+      ${igual?'':`<details class="bks-d" open><summary>Ver qué cambia</summary><ul class="bkd">${lista}</ul></details>`}
+      <details class="bks-d"><summary>✏️ Editar lo que se restaurará (avanzado)</summary><p class="d" style="margin:6px 0">Puedes ajustar el contenido de la copia antes de aplicarlo. Formato JSON.</p><textarea class="bks-json" data-bkjson="${esc(r.clave)}" spellcheck="false">${esc(JSON.stringify(r.valor,null,2))}</textarea></details></div>`;
+  }).join('');
+  const soloHoy=Object.keys(d.actual).filter(k=>!d.copia.some(r=>r.clave===k)).map(k=>(BK_SEC[k]||['',k])[1]);
+  return `<div class="panel"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start">
+      <div><h3 style="margin:0">Vista previa de la copia · ${esc(pv.nombre)}</h3><p class="d" style="margin:4px 0 0">Copia del <b>${fechaHora(pv.ts)}</b> comparada con lo que tiene la web hoy. ${nCamb} de ${d.copia.length} secciones cambiarían.</p></div>
+      <button class="btn btn-g btn-sm" data-bkcancel>← Volver</button></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0"><button class="btn btn-g btn-sm" data-bkall="1">Marcar todas</button><button class="btn btn-g btn-sm" data-bkall="0">Desmarcar todas</button><button class="btn btn-g btn-sm" data-bkall="c">Solo las que cambian</button></div>
+    <div class="bks-list">${secs||'<div class="empty">Esta copia está vacía.</div>'}</div>
+    ${soloHoy.length?`<p class="d" style="margin-top:10px">No están en esta copia (se mantienen como hoy): ${esc(soloHoy.join(', '))}.</p>`:''}
+    <label class="bks-safe"><input type="checkbox" id="bkSafe" checked> Antes de restaurar, guardar una copia de cómo está hoy (para poder deshacer)</label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn btn-p" data-bkdo>↩ Restaurar las secciones marcadas</button><button class="btn btn-g" data-bkcancel>Cancelar</button></div></div>`;
+}
 let bkAbierto=null;
 V.backups=async ()=>{
   H('Copias de seguridad','Respaldos del contenido de cada cliente. Se crean solos cada domingo.');
+  if(bkPreview){ $('#acts').innerHTML=''; return vistaPreview(); }
   $('#acts').innerHTML=`<button class="btn btn-g" data-backupnow>＋ Copia de todos</button>`;
   let grupos=[], err=false; try{ grupos=await cargarBackups(); }catch(_){ err=true; }
   if(err) return `<div class="note">💾 Para activar los backups, corre <b>07-backup.sql</b> y <b>08-backups-ui.sql</b> en Supabase (carpeta <b>backend</b>).</div>`;
@@ -548,9 +602,23 @@ document.addEventListener('click', async e=>{
       try{ const {error}=await sb.rpc('gestor_borrar_usuario',{p_user:d.udel}); if(error)throw error;
         touch(`Borró la cuenta de ${d.n}`); toast('Cuenta borrada'); return go('clientes'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
     if(d.manto!==undefined){ const j=d.manto.lastIndexOf(':'), slug=d.manto.slice(0,j), on=d.manto.slice(j+1)==='1'; const tit=($('#mantTit')?.value||'').trim(), msg=($('#mantMsg')?.value||'').trim(); el.disabled=true; try{ await setMantenimiento(slug,on,tit,msg); touch(`${on?'Activó':'Quitó'} el modo mantenimiento de ${slug}`); toast(on?'Mantenimiento activado 🛠️ La web lo muestra al recargar.':'Web en vivo ✅ Recarga para verla.'); if(editing)go('clientes'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
+    if('bkcancel'in d){ bkPreview=null; return go('backups'); }
+    if(d.bkall!==undefined){ document.querySelectorAll('[data-bksec]').forEach(c=>{ c.checked=d.bkall==='1'||(d.bkall==='c'&&!c.closest('.bks').classList.contains('igual')); }); return; }
+    if('bkdo'in d){
+      const pv=bkPreview, marc=[...document.querySelectorAll('[data-bksec]:checked')].map(c=>c.dataset.bksec);
+      if(!marc.length) return toast('Marca al menos una sección');
+      const vals={}; for(const k of marc){ const ta=document.querySelector(`[data-bkjson="${CSS.escape(k)}"]`); try{ vals[k]=JSON.parse(ta.value); }catch(_){ return toast(`El contenido editado de «${(BK_SEC[k]||['',k])[1]}» no es JSON válido`); } }
+      const nombres=marc.map(k=>(BK_SEC[k]||['',k])[1]).join(', ');
+      if(!confirm(`¿Restaurar en ${pv.nombre}?\n\n${nombres}\n\nLo demás de la web no se toca.`)) return;
+      el.disabled=true;
+      try{
+        if($('#bkSafe')&&$('#bkSafe').checked){ const {error:eb}=await sb.rpc('hacer_backup_sitio',{p_sitio:pv.sid}); if(eb&&!confirm('No pude guardar la copia de hoy antes (¿corriste 11-backup-por-cliente.sql?). ¿Restaurar igual?')){ el.disabled=false; return; } }
+        for(const k of marc){ const {error}=await sb.from('contenido').upsert({sitio_id:pv.sid,clave:k,valor:vals[k]}); if(error)throw error; }
+        touch(`Restauró ${marc.length} sección(es) de ${pv.nombre}: ${nombres}`); toast(`Restaurado ✓ ${marc.length} sección(es). La web lo muestra al recargar.`); bkPreview=null; return go('backups');
+      }catch(ex){ toast(ex.message); } el.disabled=false; return; }
     if(d.backupsitio){ e.preventDefault(); el.disabled=true; bkAbierto=d.backupsitio; try{ const {data:n,error}=await sb.rpc('hacer_backup_sitio',{p_sitio:d.backupsitio}); if(error){ if(/function|does not exist|schema cache/i.test(error.message)) throw new Error('Corre 11-backup-por-cliente.sql en Supabase para activar este botón.'); throw error; } touch(`Creó una copia de ${d.n}`); toast(`Copia de ${d.n} creada ✓ (${n} registros)`); }catch(ex){ toast(ex.message); } el.disabled=false; return go('backups'); }
     if('backupnow'in d){ el.disabled=true; try{ const {error}=await sb.rpc('hacer_backup'); if(error)throw error; touch('Creó una copia de seguridad'); toast('Copia creada ✓'); }catch(ex){ toast(ex.message); } el.disabled=false; return go('backups'); }
-    if(d.restbackup){ if(!confirm(`¿Restaurar la copia de ${d.n||'este cliente'}? Reemplazará el contenido actual de SU web por el de esa fecha. (Tip: crea una copia de ahora antes.)`))return; el.disabled=true; bkAbierto=d.sid||'null'; try{ const nn=await restaurarBackup(d.restbackup,d.sid||null); touch(`Restauró una copia de ${d.n||'un cliente'}`); toast('Copia restaurada ✓ ('+nn+' registros). La web muestra ese contenido al recargar.'); }catch(ex){ toast(ex.message); } el.disabled=false; return go('backups'); }
+    if(d.restbackup){ bkPreview={ts:d.restbackup,sid:d.sid,nombre:d.n||'cliente'}; bkAbierto=d.sid||'null'; return go('backups'); }
     if(d.delbackup){ if(!confirm('¿Borrar esta copia de seguridad?'))return; bkAbierto=d.sid||'null'; try{ let q=sb.from('backups').delete().eq('creado',d.delbackup); q=d.sid?q.eq('sitio_id',d.sid):q; const {error}=await q; if(error)throw error; touch('Borró una copia de seguridad'); toast('Copia borrada'); }catch(ex){ toast(ex.message); } return go('backups'); }
     if('prunebackups'in d){ if(!confirm('¿Borrar todas las copias de más de 30 días?'))return; try{ const cut=new Date(Date.now()-30*864e5).toISOString(); const {error}=await sb.from('backups').delete().lt('creado',cut); if(error)throw error; touch('Borró copias viejas'); toast('Copias viejas borradas'); }catch(ex){ toast(ex.message); } return go('backups'); }
     if('clearlog'in d){ if(!confirm('¿Borrar tu registro privado de este dispositivo?'))return; localStorage.removeItem(LOG); return go('registro'); }
