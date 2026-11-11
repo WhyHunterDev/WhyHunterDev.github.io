@@ -174,7 +174,7 @@
   const NAV = [
     ['General', [['resumen', '📊', 'Resumen', 'all']]],
     ['Página web', [['contenido', '🎨', 'Contenido de inicio', 'admin'], ['planes', '💳', 'Planes y precios', 'admin'], ['sedes', '📍', 'Sedes', 'admin']]],
-    ['Publicar', [['promos', '📣', 'Promos y eventos', 'admin,recepcion'], ['galeria', '🎬', 'Galería', 'admin,recepcion'], ['clases', '🗓️', 'Horario de clases', 'admin,recepcion'], ['coaches', '🏋️', 'Coaches', 'admin'], ['cafetin', '🥤', 'Cafetín', 'admin,cafetin']]],
+    ['Publicar', [['promos', '📣', 'Promos y eventos', 'admin,recepcion'], ['galeria', '🎬', 'Galería', 'admin,recepcion'], ['clases', '🗓️', 'Horario de clases', 'admin,recepcion'], ['coaches', '🏋️', 'Entrenadores', 'admin'], ['cafetin', '🥤', 'Cafetín', 'admin,cafetin']]],
     ['Equipo', [['usuarios', '👥', 'Usuarios', 'admin'], ['actividad', '🕑', 'Actividad', 'admin']]],
     ['Ayuda', [['guia', '📘', 'Guía de uso', 'all'], ['cuenta', '🔑', 'Mi cuenta', 'all']]]
   ];
@@ -241,13 +241,13 @@
       puede: () => isAdmin() || me.rol === 'recepcion' || !mySede(),
       nuevo: () => ({ id: SS.uid(), nombre: '', tipo: 'Funcional', coach: '', profe: '', sede: mySede() || data.sedes[0]?.id || 'todas', dias: ['lun', 'mie', 'vie'], hora: '07:00', duracion: 60, nota: '', activo: true }),
       campos: () => [['nombre', 'Nombre de la clase', 'text', { req: 1, max: 60, hint: 'Ej.: Funcional, Baile, Crossfit, Zumba, Spinning' }], ['tipo', 'Tipo', 'text', { max: 30, hint: 'Sirve para filtrar en la web. Ej.: Funcional, Baile, Crossfit, Cardio' }],
-        ['sede', 'Sede', 'select', { opts: [['todas', 'Todas las sedes'], ...data.sedes.map((x) => [x.id, x.nombre])] }], ['coach', 'Profesor (de Coaches)', 'select', { opts: [['', '— Otro / por definir —'], ...data.entrenadores.map((c) => [c.id, c.nombre])] }],
-        ['profe', 'Otro profesor (si no está en Coaches)', 'text', { max: 60 }], ['dias', 'Días', 'dias'], ['hora', 'Hora de inicio', 'time'], ['duracion', 'Duración (minutos)', 'num'],
+        ['sede', 'Sede', 'select', { opts: [['todas', 'Todas las sedes'], ...data.sedes.map((x) => [x.id, x.nombre])] }], ['coach', 'Profesor (de Entrenadores)', 'select', { opts: [['', '— Otro / por definir —'], ...data.entrenadores.map((c) => [c.id, c.nombre])] }],
+        ['profe', 'Otro profesor (si no está en Entrenadores)', 'text', { max: 60 }], ['dias', 'Días', 'dias'], ['hora', 'Hora de inicio', 'time'], ['duracion', 'Duración (minutos)', 'num'],
         ['nota', 'Nota para los alumnos', 'text', { full: 1, max: 120, hint: 'Opcional. Ej.: Cupos limitados, trae toalla.' }], ['activo', 'Mostrar en la web', 'bool']],
       img: () => '', nombre: (k) => `${k.nombre} · ${h12(k.hora)}`,
       sub: (k) => `${(k.dias || []).map((d) => (DIAS.find((x) => x[0] === d) || [, d])[1].slice(0, 3)).join(' ')} · ${sedeName(k.sede)} · ${(data.entrenadores.find((c) => c.id === k.coach) || {}).nombre || k.profe || 'Profesor por definir'}${k.activo === false ? ' · oculta' : ''}`,
       antes: (k) => { if (!(k.dias || []).length) throw new Error('Marca al menos un día'); if (!/^\d{2}:\d{2}$/.test(k.hora || '')) throw new Error('Pon la hora de inicio'); k.duracion = +k.duracion || 60; } },
-    coaches: { key: 'entrenadores', etiqueta: 'coach',
+    coaches: { key: 'entrenadores', etiqueta: 'entrenador',
       nuevo: () => ({ id: SS.uid(), nombre: 'Coach ', sede: data.sedes[0]?.id, especialidad: '', mensaje: '', bio: '', logros: [], foto: '', pos: 'center', fotos: [], video: '', ig: '' }),
       campos: () => [['nombre', 'Nombre', 'text', { req: 1 }], ['sede', 'Sede', 'select', { opts: sedeOpts(false) }], ['especialidad', 'Especialidad', 'text', { full: 1 }], ['mensaje', 'Frase para los clientes', 'text', { full: 1, max: 140 }], ['bio', 'Presentación', 'area', { rows: 4 }], ['logros', 'Logros y certificaciones', 'lines'], ['foto', 'Foto principal', 'media'], ['fotos', 'Más fotos', 'medias'], ['video', 'Video de presentación', 'media', { accept: 'video/*', hint: 'Un video corto (30–60 s) presentándose.' }], ['ig', 'Instagram (enlace, opcional)', 'url'], ['pos', 'Encuadre de la foto', 'select', { opts: [['center', 'Centro'], ['50% 20%', 'Arriba'], ['50% 80%', 'Abajo'], ['30% 30%', 'Izquierda'], ['70% 30%', 'Derecha']] }]],
       img: (c) => c.foto, nombre: (c) => c.nombre, sub: (c) => `${c.especialidad} · ${sedeName(c.sede)}${c.video ? ' · 🎬' : ''}` },
@@ -273,9 +273,9 @@
   const title = (t, sub) => { $('#vt').textContent = t; return sub ? `<p class="sub">${esc(sub)}</p>` : ''; };
   V.resumen = async () => {
     const t = SS.today(), act = data.publicaciones.filter(SS.vigente).length, pend = [...data.publicaciones, ...data.galeria].filter((x) => x.estado === 'pendiente');
-    const q = [['promos', '📣 Publicar promo o evento'], ['galeria', '🎬 Subir fotos o videos'], ['cafetin', '🥤 Actualizar cafetín'], ['contenido', '🎨 Cambiar textos de inicio'], ['coaches', '🏋️ Editar coaches']].filter(([v]) => allowed().includes(v));
+    const q = [['promos', '📣 Publicar promo o evento'], ['galeria', '🎬 Subir fotos o videos'], ['cafetin', '🥤 Actualizar cafetín'], ['contenido', '🎨 Cambiar textos de inicio'], ['coaches', '🏋️ Editar entrenadores']].filter(([v]) => allowed().includes(v));
     return title('Hola, ' + me.nombre.split(' ')[0], 'Esto es lo que pasa hoy en Santos Strength.') + `
-      <div class="grid4"><div class="kpi"><b>${act}</b><small>Promos activas</small></div><div class="kpi"><b>${data.galeria.length}</b><small>Fotos y videos</small></div><div class="kpi"><b>${data.entrenadores.length}</b><small>Coaches</small></div><div class="kpi"><b>${data.sedes.length}</b><small>Sedes</small></div></div>
+      <div class="grid4"><div class="kpi"><b>${act}</b><small>Promos activas</small></div><div class="kpi"><b>${data.galeria.length}</b><small>Fotos y videos</small></div><div class="kpi"><b>${data.entrenadores.length}</b><small>Entrenadores</small></div><div class="kpi"><b>${data.sedes.length}</b><small>Sedes</small></div></div>
       ${pend.length && isAdmin() ? `<div class="info">Tienes ${pend.length} publicación(es) esperando aprobación en Promos o Galería.</div>` : ''}
       <div class="panel"><h3>Acciones rápidas</h3><p class="d">Lo que más se usa, a un toque.</p><div style="display:flex;gap:8px;flex-wrap:wrap">${q.map(([v, n]) => `<button class="btn btn-g" data-v="${v}">${n}</button>`).join('')}</div></div>
       <div class="panel"><h3>Por vencer</h3><p class="d">Promos y combos que terminan en los próximos 5 días.</p>${[...data.publicaciones.filter((p) => p.fin && p.fin >= t && p.fin <= SS.today(5)).map((p) => `📣 ${esc(p.titulo)} — ${p.fin}`), ...data.cafetin.combos.filter((k) => k.hasta && k.hasta >= t && k.hasta <= SS.today(5)).map((k) => `🥤 ${esc(k.nombre)} — ${k.hasta}`)].map((x) => `<div style="padding:.35rem 0">${x}</div>`).join('') || '<small style="color:var(--mu)">Nada por vencer. 👌</small>'}</div>
@@ -285,7 +285,7 @@
   V.promos = crudView('promos', 'Promos y eventos', 'Lo que publiques aparece en la web al instante y se oculta solo al vencer.');
   V.galeria = crudView('galeria', 'Galería', 'Todo queda ordenado en la pestaña Galería de la web, sin alargar la página.');
   V.clases = async () => { data.clases = data.clases || []; DEF = DEFS.clases; return title('Horario de clases', 'Funcional, baile, crossfit… Agrega cada clase con su profesor, días y hora. Aparece en la web en la pestaña Clases.') + await crudList(DEFS.clases); };
-  V.coaches = crudView('coaches', 'Coaches', 'Cada coach tiene su propia página con fotos y video.');
+  V.coaches = crudView('coaches', 'Entrenadores', 'Cada entrenador tiene su propia página con fotos y video.');
   V.sedes = crudView('sedes', 'Sedes', 'Agrega, edita o elimina sedes. Cada una tiene su WhatsApp de recepción.');
   let cafeTab = 'cafe';
   V.cafetin = async () => {
@@ -372,7 +372,7 @@
     ${B() ? `<div class="panel" style="max-width:520px"><h3>Acceso</h3><p class="d">Tu acceso es <b>${esc(me.email)}</b>. Si olvidas tu contraseña, usa «¿Olvidaste tu contraseña?» en la pantalla de inicio.</p></div>` : ''}`;
   V.guia = async () => {
     const G = {
-      admin: [['Entra siempre por tu enlace privado', 'No está en la web pública. Guárdalo en favoritos y no lo compartas.'], ['Crea las cuentas del equipo', 'Usuarios → Nuevo usuario. El sistema da una clave temporal; la persona crea la suya al entrar.'], ['Edita la portada', 'Contenido de inicio: textos, barra animada, visión, números, encabezado de videos y redes.'], ['Precios y eventos', 'Planes y precios: para Black Friday u otro evento, pon el precio y la fecha final. Vuelve solo al precio normal.'], ['Sedes', 'Agrega o elimina sedes. Cada una con su WhatsApp, horario, foto y video de cómo llegar.'], ['Coaches', 'Cada coach tiene su página: foto, más fotos, presentación, logros y video.'], ['Control', 'Si alguien deja el trabajo: Usuarios → Bloquear. En Actividad ves todo lo que se cambió.']],
+      admin: [['Entra siempre por tu enlace privado', 'No está en la web pública. Guárdalo en favoritos y no lo compartas.'], ['Crea las cuentas del equipo', 'Usuarios → Nuevo usuario. El sistema da una clave temporal; la persona crea la suya al entrar.'], ['Edita la portada', 'Contenido de inicio: textos, barra animada, visión, números, encabezado de videos y redes.'], ['Precios y eventos', 'Planes y precios: para Black Friday u otro evento, pon el precio y la fecha final. Vuelve solo al precio normal.'], ['Sedes', 'Agrega o elimina sedes. Cada una con su WhatsApp, horario, foto y video de cómo llegar.'], ['Entrenadores', 'Cada entrenador tiene su página: foto, más fotos, presentación, logros y video.'], ['Control', 'Si alguien deja el trabajo: Usuarios → Bloquear. En Actividad ves todo lo que se cambió.']],
       recepcion: [['Publica promos y eventos', 'Promos y eventos → Agregar. Ponle foto, fechas y listo: sale en la web al instante.'], ['Se ocultan solas', 'Al pasar la fecha «Hasta», la promo desaparece de la web. No tienes que borrarla.'], ['Sube fotos y videos', 'Galería → Agregar. Se guardan ordenados por categoría y no llenan la página.'], ['Videos para la portada', 'Marca «Mostrar en la portada» para que salga en el carrusel de inicio.'], ['Responde el WhatsApp', 'Los mensajes de la web llegan al WhatsApp de tu sede.']],
       cafetin: [['Actualiza el stock', 'Cafetín → botón Disponible / Agotado en cada producto.'], ['Nuevo producto', 'Agregar producto: foto, precio, proteína, calorías y en qué sedes hay.'], ['Combos', 'Pestaña Combos: precio combo, precio normal y hasta cuándo vale.'], ['Portada del cafetín', 'Cambia el título, texto y la foto grande del cafetín.']]
     };
