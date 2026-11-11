@@ -281,12 +281,29 @@ async function clForm(){
     ${!n?await verPanel(cl):''}`;
 }
 const TEMA_NOM={'':'Normal','navidad':'🎄 Navidad','halloween':'🎃 Halloween','anionuevo':'🎆 Año Nuevo','fiestaspatrias':'🇵🇪 Fiestas Patrias','sanvalentin':'❤️ San Valentín'};
-async function leerConfig(slug){
+async function leerSitio(slug){
   if(!slug)return null;
   const {data:s,error:e1}=await sb.from('sitios').select('id').eq('slug',slug).maybeSingle(); if(e1)throw e1;
   if(!s)return null;
   const {data:c}=await sb.from('contenido').select('valor').eq('sitio_id',s.id).eq('clave','config').maybeSingle();
-  return (c&&c.valor)||{};
+  let metricas=[], metErr=false;
+  try{ const {data:mm,error:em}=await sb.from('metricas').select('dia,tipo,n').eq('sitio_id',s.id); if(em)throw em; metricas=mm||[]; }catch(_){ metErr=true; }
+  return { config:(c&&c.valor)||{}, metricas, metErr };
+}
+function aggMetricas(rows){
+  const today=new Date().toISOString().slice(0,10), d7=new Date(Date.now()-6*864e5).toISOString().slice(0,10);
+  const a={visita:{hoy:0,sem:0,tot:0},whatsapp:{hoy:0,sem:0,tot:0}};
+  for(const r of (rows||[])){ const o=a[r.tipo]; if(!o)continue; o.tot+=r.n; if(r.dia>=d7)o.sem+=r.n; if(r.dia===today)o.hoy+=r.n; }
+  return a;
+}
+function statCard(emo,titulo,o){
+  const box='background:#0e0e12;border:1px solid var(--line);border-radius:12px;padding:14px;flex:1;min-width:170px';
+  return`<div style="${box}"><div style="color:var(--mu);font-size:.8rem">${emo} ${titulo}</div><div style="font-size:1.8rem;font-weight:800;margin:4px 0;font-family:var(--mono,inherit)">${o.tot}</div><div style="color:var(--mu);font-size:.78rem">Hoy ${o.hoy} · 7 días ${o.sem}</div></div>`;
+}
+function estadisticasPanel(info){
+  if(info.metErr) return`<div class="panel"><h3>Estadísticas de la web</h3><div class="note">📊 Para ver visitas y clics a WhatsApp, corre el archivo <b>06-metricas.sql</b> en Supabase (está en la carpeta <b>backend</b>). Luego aparecen aquí solas.</div></div>`;
+  const a=aggMetricas(info.metricas);
+  return`<div class="panel"><h3>Estadísticas de la web</h3><p class="d">Actividad de los visitantes de la web.</p><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">${statCard('👀','Visitas',a.visita)}${statCard('💬','Clics a WhatsApp',a.whatsapp)}</div></div>`;
 }
 function estadoPanel(cl,cf){
   const pago=cl.pago==='pagado'?'<b style="color:var(--ok)">✅ Pagado</b>':'<b style="color:var(--warn)">🟠 Por cobrar</b>';
@@ -302,8 +319,8 @@ function estadoPanel(cl,cf){
 async function verPanel(cl){
   const vs=[...(cl.versiones||[])].sort((a,b)=>b.t-a.t);
   const slug=slugDe(cl.url);
-  let cf=null, estErr=false; try{ cf=await leerConfig(slug); }catch(_){ estErr=true; }
-  const estado = slug ? (estErr?'<div class="panel"><h3>Estado del cliente</h3><div class="note">No pude leer el estado de la web ahora. Revisa la URL o inténtalo de nuevo.</div></div>':estadoPanel(cl,cf)) : '';
+  let cf=null, estErr=false, info=null; try{ info=await leerSitio(slug); cf=info?info.config:null; }catch(_){ estErr=true; }
+  const estado = slug ? (estErr?'<div class="panel"><h3>Estado del cliente</h3><div class="note">No pude leer el estado de la web ahora. Revisa la URL o inténtalo de nuevo.</div></div>':(estadoPanel(cl,cf)+(info?estadisticasPanel(info):''))) : '';
   return estado+`<div class="panel"><h3>Tema de la web <span class="tag x">Extra · cóbralo</span></h3><p class="d">Cambia el look de temporada de la web de este cliente al instante. Ideal para vender como adicional.</p>
     ${slug?`<div class="temas">${TEMAS.map(([k,n,emo])=>`<button class="tema" data-tema="${esc(slug)}:${esc(k)}"><b>${emo}</b> ${esc(n)}</button>`).join('')}</div><label style="display:block;margin-top:14px;color:var(--mu);font-size:.8rem;font-weight:600">Texto del banner de promo (opcional)<input id="promoTxt" type="text" maxlength="90" placeholder="Ej: 2×1 en inscripción solo diciembre" style="margin-top:5px"></label><button class="tema save" data-savepromo="${esc(slug)}" style="margin-top:10px">💾 Guardar texto de promo</button><p class="d" style="margin-top:6px">Déjalo vacío para usar el texto por defecto de cada temporada.</p><div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px"><h4 style="font-size:.92rem;margin-bottom:4px">Autonomía del cliente <span class="tag x">Vende el extra</span></h4><p class="d">Si lo activas, el cliente podrá cambiar el tema y el texto desde su propio panel, sin pedírtelo.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="tema" data-extra="${esc(slug)}:1">✅ Activar para el cliente</button><button class="tema" data-extra="${esc(slug)}:0">🚫 Desactivar</button></div></div>`:'<div class="note">Pon la <b>URL de la web</b> del cliente arriba y guarda, para poder aplicar temas.</div>'}</div>
     <div class="panel"><h3>Versiones y cambios</h3><p class="d">Guarda un punto antes de cada cambio grande para poder volver atrás.</p>

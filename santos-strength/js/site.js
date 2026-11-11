@@ -395,5 +395,16 @@
   });
 
   chrome(); applyTema(); await render();
+  // ---------- Métricas (solo en la nube) ----------
+  const BK = window.SS_BACKEND;
+  if (BK && BK.metrica) {
+    let primera = true;
+    try { if (sessionStorage.getItem('ss-vis')) primera = false; else sessionStorage.setItem('ss-vis', '1'); } catch (_) {}
+    if (primera) BK.metrica('visita');
+    addEventListener('click', (e) => {
+      const a = e.target.closest('a[href]');
+      if (a && /wa\.me|api\.whatsapp|whatsapp\.com/i.test(a.href)) BK.metrica('whatsapp');
+    }, true);
+  }
   addEventListener('storage', async (e) => { if (e.key === 'ss-ping') { data = await SS.load(); chrome(); applyTema(); render(true); } });
 })();

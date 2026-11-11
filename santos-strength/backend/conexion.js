@@ -50,6 +50,11 @@
     await sb.from('actividad').insert({ sitio_id: sid, quien, que });
   }
 
+  // Registra una visita o un clic a WhatsApp (anonimo y seguro, via RPC).
+  async function metrica(tipo) {
+    try { await sb.rpc('registrar_evento', { p_slug: CONFIG.sitio, p_tipo: tipo }); } catch (_) {}
+  }
+
   // Autenticación (reemplaza al login local del panel).
   const auth = {
     async entrar(email, pass) {
@@ -68,5 +73,5 @@
   };
 
   // Expuesto para que store.js lo use si está presente.
-  window.SS_BACKEND = { sb, cargar, guardarClave, subir, actividad, auth, idDe };
+  window.SS_BACKEND = { sb, cargar, guardarClave, subir, actividad, metrica, sitio: CONFIG.sitio, auth, idDe };
 })();
