@@ -394,6 +394,34 @@
     if (pl.classList.contains('on') && e.key === 'ArrowLeft') openPlayer(plist, cur - 1);
   });
 
+  // ---------- Modo mantenimiento ----------
+  function pantallaMantenimiento(c, sedes) {
+    const m = c.manto || {};
+    const titulo = (m.titulo || '').trim() || 'Estamos mejorando la web';
+    const msg = (m.msg || '').trim() || 'Volvemos en un momento con algo mejor para ti. Gracias por tu paciencia. 💪';
+    const num = (sedes && sedes[0] && sedes[0].whatsapp) ? String(sedes[0].whatsapp).replace(/\D/g, '') : '';
+    const r = c.redes || {};
+    const soc = [
+      r.instagram && `<a href="${esc(r.instagram)}" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>`,
+      r.tiktok && `<a href="${esc(r.tiktok)}" target="_blank" rel="noopener" aria-label="TikTok"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 5.8A4.3 4.3 0 0 1 15.5 3h-3.1v12.4a2.6 2.6 0 1 1-2.6-2.6c.3 0 .5 0 .8.1V9.7a5.7 5.7 0 1 0 4.9 5.7V9a7.4 7.4 0 0 0 4.3 1.4V7.3a4.3 4.3 0 0 1-3.2-1.5z"/></svg></a>`,
+      r.facebook && `<a href="${esc(r.facebook)}" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 8h3V4h-3a4 4 0 0 0-4 4v2H8v4h2v8h4v-8h3l1-4h-4V8z"/></svg></a>`
+    ].filter(Boolean).join('');
+    document.title = 'En mantenimiento';
+    document.body.classList.add('mant');
+    const el = document.createElement('div'); el.id = 'mantoScreen';
+    el.innerHTML = `<div class="mc">
+      <img class="logo" src="img/logo.png" alt="">
+      <span class="badge">🛠️ En mantenimiento</span>
+      <h1>${esc(titulo)}</h1>
+      <p>${esc(msg)}</p>
+      ${num ? `<a class="wa" href="https://wa.me/${num}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.8.7.8-2.7-.2-.3A8 8 0 1 1 12 20zm4.5-5.8c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-1.9-1.2 7.2 7.2 0 0 1-1.3-1.7c-.1-.2 0-.4.1-.5l.4-.4.3-.5v-.4l-.8-1.9c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3a2.7 2.7 0 0 0-.9 2c0 1.2.9 2.4 1 2.5.1.2 1.7 2.7 4.2 3.8 1.5.6 2 .7 2.7.6.4-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1l-.3-.3z"/></svg> Escríbenos por WhatsApp</a>` : ''}
+      ${soc ? `<div class="social">${soc}</div>` : ''}
+      <div class="dots"><span></span><span></span><span></span></div>
+    </div>`;
+    document.body.appendChild(el);
+  }
+  if (data.config.mantenimiento) { pantallaMantenimiento(data.config, data.sedes); return; }
+
   chrome(); applyTema(); await render();
   // ---------- Métricas (solo en la nube) ----------
   const BK = window.SS_BACKEND;

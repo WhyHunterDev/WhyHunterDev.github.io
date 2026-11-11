@@ -464,3 +464,23 @@ html[data-tema="sanvalentin"]{--tg1:rgba(255,77,109,.24);--tg2:rgba(255,143,163,
 html[data-tema="sanvalentin"] .marquee{background:linear-gradient(90deg,#ff4d6d,#ff8fa3);color:#fff}
 html[data-tema="sanvalentin"] #temaDeco .pt{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ff5d7e' d='M12 21s-8-5.3-8-11a4.4 4.4 0 0 1 8-2.7A4.4 4.4 0 0 1 20 10c0 5.7-8 11-8 11z'/%3E%3C/svg%3E");filter:drop-shadow(0 0 3px rgba(255,93,126,.5))}
 @media(prefers-reduced-motion:reduce){#temaDeco .pt,#temaRibbon::before,#temaLights{animation:none}#temaDeco .pt{display:none}}
+/* ===== Modo mantenimiento ===== */
+body.mant .nav,body.mant #app,body.mant .bbar,body.mant .fab,body.mant footer,body.mant #temaDeco,body.mant #temaRibbon,body.mant #temaLights{display:none!important}
+body.mant{overflow:hidden}
+#mantoScreen{position:fixed;inset:0;z-index:300;display:grid;place-items:center;padding:28px;overflow:auto;background:radial-gradient(ellipse at 50% -12%,rgba(245,196,0,.16),transparent 55%),var(--bg)}
+#mantoScreen .mc{max-width:540px;width:100%;text-align:center;display:grid;gap:18px;justify-items:center;animation:mantIn .6s cubic-bezier(.2,.7,.2,1) both}
+@keyframes mantIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+#mantoScreen .logo{width:92px;height:92px;border-radius:24px;object-fit:cover;box-shadow:0 20px 55px rgba(0,0,0,.55);border:1px solid var(--line)}
+#mantoScreen .badge{display:inline-flex;gap:.5rem;align-items:center;background:rgba(245,196,0,.14);border:1px solid rgba(245,196,0,.38);color:var(--y);padding:.42rem .95rem;border-radius:999px;font-weight:700;font-size:.82rem;letter-spacing:.03em;text-transform:uppercase}
+#mantoScreen h1{font-family:var(--fd);text-transform:uppercase;letter-spacing:.01em;font-size:clamp(1.9rem,5.5vw,2.8rem);line-height:1.02;color:var(--tx)}
+#mantoScreen p{color:var(--mu);font-size:1.03rem;line-height:1.6;max-width:44ch;margin:0 auto}
+#mantoScreen .wa{display:inline-flex;gap:.55rem;align-items:center;background:var(--wa);color:#04281a;padding:.8rem 1.4rem;border-radius:14px;font-weight:800;text-decoration:none;box-shadow:0 14px 34px -8px rgba(37,211,102,.55);transition:transform .2s}
+#mantoScreen .wa:hover{transform:translateY(-2px)}
+#mantoScreen .social{display:flex;gap:14px;margin-top:2px}
+#mantoScreen .social a{color:var(--mu);transition:color .2s}#mantoScreen .social a:hover{color:var(--y)}
+#mantoScreen .social svg{width:22px;height:22px}
+#mantoScreen .dots{display:flex;gap:9px;margin-top:6px}
+#mantoScreen .dots span{width:9px;height:9px;border-radius:50%;background:var(--y);opacity:.35;animation:mantDot 1.3s infinite ease-in-out}
+#mantoScreen .dots span:nth-child(2){animation-delay:.18s}#mantoScreen .dots span:nth-child(3){animation-delay:.36s}
+@keyframes mantDot{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-6px)}}
+@media(prefers-reduced-motion:reduce){#mantoScreen .mc,#mantoScreen .dots span{animation:none}}
