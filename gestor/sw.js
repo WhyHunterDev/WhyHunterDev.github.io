@@ -1,5 +1,5 @@
 /* Service Worker — Gestor WhyHunter (PWA) */
-const V = 'gestor-wh-v5';
+const V = 'gestor-wh-v6';
 const CORE = [
   './', './index.html', './manifest.webmanifest',
   './backend/conexion.js',
@@ -23,7 +23,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   if (url.origin !== location.origin) return; // supabase / CDN / fuentes van a la red
   if (req.mode === 'navigate') {
-    e.respondWith(fetch(req).catch(() => caches.match('./index.html')));
+    e.respondWith(fetch(req, { cache: 'no-cache' }).catch(() => caches.match('./index.html')));
     return;
   }
   e.respondWith(
