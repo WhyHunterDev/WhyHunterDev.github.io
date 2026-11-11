@@ -250,13 +250,23 @@
       <div class="cafe-hero"><img src="${esc(await U(cf.imagen))}" alt="">
         <div><span class="eyebrow">Cafetín fit · ${esc(sede === 'todas' ? 'todas las sedes' : 'sede ' + sedeName(sede))}</span><h1 class="h1">${esc(cf.titulo)} <em>${esc(cf.acento)}</em></h1><p class="lead" style="color:#ddd">${esc(cf.texto)}</p>${cafeBadge}</div></div>
       ${sedeChips()}
-      ${combos.length ? `<h2 class="h2" style="font-size:2rem;margin-top:2.6rem">Combos <em>del momento</em></h2><div class="combos">${(await Promise.all(combos.map(async (c) => `<div class="combo rv"><div class="ci">${c.foto ? `<img src="${esc(await U(c.foto))}" alt="" loading="lazy">` : ''}</div><div><small>Combo${c.hasta ? ' · hasta ' + fmt(c.hasta) : ''}</small><h4>${esc(c.nombre)}</h4><p>${esc(c.incluye)}</p></div><div class="cp">${c.precioAntes ? `<s>${soles(c.precioAntes)}</s>` : ''}<b>${soles(c.precio)}</b></div></div>`))).join('')}</div>` : ''}
+      ${combos.length ? `<h2 class="h2" style="font-size:2rem;margin-top:2.6rem">Combos <em>del momento</em></h2><div class="combos">${(await Promise.all(combos.map(async (c) => `<button class="combo rv" data-combo="${c.id}"><div class="ci">${c.foto ? `<img src="${esc(await U(c.foto))}" alt="" loading="lazy">` : ''}</div><div><small>Combo${c.hasta ? ' · hasta ' + fmt(c.hasta) : ''}</small><h4>${esc(c.nombre)}</h4><p>${esc(c.incluye)}</p></div><div class="cp">${c.precioAntes ? `<s>${soles(c.precioAntes)}</s>` : ''}<b>${soles(c.precio)}</b><span class="cpedir">Pedir →</span></div></button>`))).join('')}</div>` : ''}
       <div class="row-hd" style="margin-top:2.6rem"><h2 class="h2" style="font-size:2rem;margin:0">Nuestro <em>menú</em></h2><div class="chips">${cats.map((c) => `<button class="chip ${c === cat ? 'on' : ''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('')}</div></div>
       <div class="menu">${(await Promise.all(vis.map(async (i) => `<button class="mcard rv ${i.disponible ? '' : 'off'}" data-item="${i.id}">
         <div class="mi">${i.foto ? `<img src="${esc(await U(i.foto))}" alt="${esc(i.nombre)}" loading="lazy">` : '🥤'}${!i.disponible ? '<span class="tag x">Agotado</span>' : i.destacado ? '<span class="tag y">Favorito</span>' : ''}<span class="pr">${soles(i.precio)}</span></div>
         <div class="mb"><h4>${esc(i.nombre)}</h4><p>${esc(i.descripcion)}</p><div class="mac">${i.proteina ? `<span class="p">${i.proteina} g prot.</span>` : ''}${i.kcal ? `<span>${i.kcal} kcal</span>` : ''}${i.objetivo === 'definicion' ? '<span>🔥 Definición</span>' : i.objetivo === 'volumen' ? '<span>💪 Volumen</span>' : ''}</div></div></button>`))).join('') || '<div class="empty">Sin productos en esta categoría.</div>'}</div>
     </div></section>`;
   };
+  async function openCombo(id) {
+    const c = data.cafetin.combos.find((x) => x.id === id); if (!c) return;
+    const s = (sede !== 'todas' && sedeObj(sede)) ? sedeObj(sede) : (sedeObj((c.sedes || [])[0]) || waSede());
+    $('#modal').innerHTML = `<div class="box"><div class="im">${c.foto ? `<img src="${esc(await U(c.foto))}" alt="">` : ''}</div><div class="bd">
+      <span class="eyebrow">Combo${c.hasta ? ' · hasta ' + fmt(c.hasta) : ''}</span><h3>${esc(c.nombre)}</h3><p style="color:#cfcabf">${esc(c.incluye)}</p>
+      <div class="big">${c.precioAntes ? `<s style="font-size:.55em;color:var(--mu);margin-right:.4rem">${soles(c.precioAntes)}</s>` : ''}${soles(c.precio)}</div><small style="color:var(--mu)">Disponible en: ${(c.sedes || []).map(sedeName).join(', ')}</small>
+      ${cafeAbierto(s) ? `<a class="btn btn-wa" target="_blank" rel="noopener" href="${SS.waLink(cafeWa(s), `Hola 👋 Quiero pedir el ${c.nombre} (${c.incluye}) a ${soles(c.precio)} en la sede ${s.nombre}. ¿Está disponible?`)}">${WA}Pedir combo por WhatsApp</a>` : `<div class="cafe-cerrado">🕒 <b>Pedidos cerrados ahora</b><span>Cafetín ${esc(s.nombre)}: ${cafeHorarioTxt(s)}</span></div>`}
+    </div><button class="xbtn" data-mclose aria-label="Cerrar">×</button></div>`;
+    $('#modal').classList.add('on');
+  }
   async function openItem(id) {
     const i = data.cafetin.items.find((x) => x.id === id); if (!i) return;
     const s = (sede !== 'todas' && sedeObj(sede)) ? sedeObj(sede) : (sedeObj((i.sedes || [])[0]) || waSede());
@@ -407,6 +417,7 @@
     if ((el = t('[data-wa]'))) { e.preventDefault(); openSheet(el.dataset.plan); return; }
     if ((el = t('[data-goal]'))) { renderQuiz(el.dataset.goal); return; }
     if ((el = t('[data-cat]'))) { cat = el.dataset.cat; render(true); return; }
+    if ((el = t('[data-combo]'))) { openCombo(el.dataset.combo); return; }
     if ((el = t('[data-item]'))) { openItem(el.dataset.item); return; }
     if ((el = t('[data-reel]'))) { openPlayer(reelList, +el.dataset.reel); return; }
     if ((el = t('[data-g]'))) { openPlayer(galList, +el.dataset.g); return; }

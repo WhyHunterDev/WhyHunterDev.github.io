@@ -500,3 +500,7 @@ body.mant{overflow:hidden}
 #geoAsk button[data-geono]{background:none;border:0;color:#aaa;font-size:1.2rem;cursor:pointer;padding:0 .3rem}
 .geonota{position:fixed;left:50%;transform:translateX(-50%);bottom:88px;z-index:61;padding:.7rem 1rem;border-radius:14px;background:#111;border:1px solid rgba(245,196,0,.4);color:#fff;font-size:.88rem;max-width:calc(100% - 32px);animation:geoIn .35s ease}
 @keyframes geoIn{from{opacity:0;transform:translate(-50%,10px)}}
+/* ---- Combos pedibles ---- */
+button.combo{width:100%;border:0;font:inherit;text-align:left;cursor:pointer;transition:transform .15s,box-shadow .15s}
+button.combo:hover{transform:translateY(-2px);box-shadow:0 14px 30px -14px rgba(245,196,0,.7)}
+.combo .cpedir{display:inline-block;margin-top:.35rem;padding:.3rem .65rem;border-radius:999px;background:#000;color:var(--y);font-size:.72rem;font-weight:800;letter-spacing:.02em;white-space:nowrap}
