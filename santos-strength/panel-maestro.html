@@ -297,20 +297,30 @@ async function leerSitio(slug){
   try{ const {data:mm,error:em}=await sb.from('metricas').select('dia,tipo,n').eq('sitio_id',s.id); if(em)throw em; metricas=mm||[]; }catch(_){ metErr=true; }
   return { config:(c&&c.valor)||{}, metricas, metErr };
 }
-function aggMetricas(rows){
-  const today=new Date().toISOString().slice(0,10), d7=new Date(Date.now()-6*864e5).toISOString().slice(0,10);
-  const a={visita:{hoy:0,sem:0,tot:0},whatsapp:{hoy:0,sem:0,tot:0}};
-  for(const r of (rows||[])){ const o=a[r.tipo]; if(!o)continue; o.tot+=r.n; if(r.dia>=d7)o.sem+=r.n; if(r.dia===today)o.hoy+=r.n; }
-  return a;
+function serieDias(rows,tipo,dias){
+  const map={}; for(const r of (rows||[])) if(r.tipo===tipo) map[r.dia]=(map[r.dia]||0)+r.n;
+  const out=[], hoy=new Date();
+  for(let i=dias-1;i>=0;i--){ const d=new Date(hoy); d.setDate(d.getDate()-i); const k=d.toISOString().slice(0,10); out.push({dia:k,n:map[k]||0,etq:d.toLocaleDateString('es-PE',{day:'numeric',month:'short'})}); }
+  return out;
 }
-function statCard(emo,titulo,o){
-  const box='background:#0e0e12;border:1px solid var(--line);border-radius:12px;padding:14px;flex:1;min-width:170px';
-  return`<div style="${box}"><div style="color:var(--mu);font-size:.8rem">${emo} ${titulo}</div><div style="font-size:1.8rem;font-weight:800;margin:4px 0;font-family:var(--mono,inherit)">${o.tot}</div><div style="color:var(--mu);font-size:.78rem">Hoy ${o.hoy} · 7 días ${o.sem}</div></div>`;
+function barChart(serie,color){
+  const max=Math.max(1,...serie.map(s=>s.n));
+  const bars=serie.map(s=>{ const h=Math.round(s.n/max*100); return `<div title="${s.etq}: ${s.n}" style="flex:1;min-width:0;display:flex;align-items:flex-end;height:100%"><div style="width:100%;height:${s.n>0?Math.max(h,7):2}%;background:${s.n>0?color:'#1c1c22'};border-radius:4px 4px 2px 2px"></div></div>`; }).join('');
+  return `<div style="display:flex;align-items:flex-end;gap:4px;height:92px;margin-top:12px">${bars}</div>`;
+}
+function statBlock(emo,titulo,serie,color){
+  const tot=serie.reduce((a,s)=>a+s.n,0), hoy=serie[serie.length-1].n, sem=serie.slice(-7).reduce((a,s)=>a+s.n,0);
+  return `<div style="background:#0e0e12;border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:10px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-weight:700">${emo} ${titulo}</span><b style="font-family:var(--mono,inherit);font-size:1.6rem;color:${color}">${tot}</b></div>
+    <div style="color:var(--mu);font-size:.78rem">Hoy ${hoy} · 7 días ${sem} · total ${tot}</div>
+    ${barChart(serie,color)}
+    <div style="display:flex;justify-content:space-between;color:var(--mu);font-size:.68rem;margin-top:5px"><span>${serie[0].etq}</span><span>Hoy</span></div>
+  </div>`;
 }
 function estadisticasPanel(info){
   if(info.metErr) return`<div class="panel"><h3>Estadísticas de la web</h3><div class="note">📊 Para ver visitas y clics a WhatsApp, corre el archivo <b>06-metricas.sql</b> en Supabase (está en la carpeta <b>backend</b>). Luego aparecen aquí solas.</div></div>`;
-  const a=aggMetricas(info.metricas);
-  return`<div class="panel"><h3>Estadísticas de la web</h3><p class="d">Actividad de los visitantes de la web.</p><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">${statCard('👀','Visitas',a.visita)}${statCard('💬','Clics a WhatsApp',a.whatsapp)}</div></div>`;
+  const v=serieDias(info.metricas,'visita',14), w=serieDias(info.metricas,'whatsapp',14);
+  return`<div class="panel"><h3>Estadísticas de la web</h3><p class="d">Actividad de los últimos 14 días.</p>${statBlock('👀','Visitas',v,'#5ed6a8')}${statBlock('💬','Clics a WhatsApp',w,'#8b5cf6')}</div>`;
 }
 function estadoPanel(cl,cf){
   const pago=cl.pago==='pagado'?'<b style="color:var(--ok)">✅ Pagado</b>':'<b style="color:var(--warn)">🟠 Por cobrar</b>';
