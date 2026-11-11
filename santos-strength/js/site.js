@@ -213,8 +213,9 @@
     if (claseTipo !== 'todas' && !tipos.includes(claseTipo)) claseTipo = 'todas';
     const list = all.filter((k) => claseTipo === 'todas' || (k.tipo || k.nombre) === claseTipo), hoy = hoyDia();
     const coachDe = (k) => data.entrenadores.find((c) => c.id === k.coach);
-    const card = (k, d) => { const c = coachDe(k), prof = c ? c.nombre : k.profe;
-      return `<button class="clase" data-clase="${esc(k.id)}" data-dia="${d}"><b class="ch">${esc(hora12(k.hora))}</b><span class="cn">${esc(k.nombre)}</span>${prof ? `<span class="cp">con ${esc(prof)}</span>` : ''}<span class="cm">${esc(k.duracion || 60)} min${sede === 'todas' ? ' · ' + esc(sedeName(k.sede)) : ''}</span>${k.nota ? `<span class="cnota">${esc(k.nota)}</span>` : ''}</button>`; };
+    const fotos = {}; await Promise.all(all.map(async (k) => { const c = coachDe(k), f = k.profeFoto || (c && c.foto); if (f) fotos[k.id] = await U(f); }));
+    const card = (k, d) => { const c = coachDe(k), prof = c ? c.nombre : k.profe, fo = fotos[k.id];
+      return `<button class="clase" data-clase="${esc(k.id)}" data-dia="${d}"><b class="ch">${esc(hora12(k.hora))}</b><span class="cn">${esc(k.nombre)}</span>${prof || fo ? `<span class="cp">${fo ? `<img src="${esc(fo)}" alt="" loading="lazy" style="object-position:${esc((c && !k.profeFoto && c.pos) || 'center')}">` : ''}${prof ? 'con ' + esc(prof) : ''}</span>` : ''}<span class="cm">${esc(k.duracion || 60)} min${sede === 'todas' ? ' · ' + esc(sedeName(k.sede)) : ''}</span>${k.nota ? `<span class="cnota">${esc(k.nota)}</span>` : ''}</button>`; };
     const cols = DIAS_W.map(([d, n]) => { const ks = list.filter((k) => (k.dias || []).includes(d)).sort((a, b) => String(a.hora).localeCompare(String(b.hora)));
       return `<div class="cl-dia ${d === hoy ? 'hoy' : ''}" ${d === hoy ? 'id="clHoy"' : ''}><h4>${n}${d === hoy ? ' <small>Hoy</small>' : ''}</h4>${ks.map((k) => card(k, d)).join('') || '<p class="cl-vacio">Sin clases</p>'}</div>`; }).join('');
     const chips = tipos.length > 1 ? `<div class="chips" style="margin-top:.8rem">${[['todas', 'Todas las clases'], ...tipos.map((x) => [x, x])].map(([id, n]) => `<button class="chip ${id === claseTipo ? 'on' : ''}" data-ctipo="${esc(id)}">${esc(n)}</button>`).join('')}</div>` : '';

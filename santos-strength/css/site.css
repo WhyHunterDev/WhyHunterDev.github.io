@@ -518,3 +518,4 @@ button.combo:hover{transform:translateY(-2px);box-shadow:0 14px 30px -14px rgba(
 .clase .cp,.clase .cm{font-size:.76rem;color:var(--mu)}.clase .cnota{font-size:.72rem;color:#d9d3c4;margin-top:3px}
 .cl-vacio{font-size:.78rem;color:var(--mu);opacity:.7}
 @media(max-width:900px){.cl-week{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;margin-left:-16px;margin-right:-16px;padding:0 16px 8px}.cl-dia{flex:0 0 72%;scroll-snap-align:start}}
+.clase .cp{display:flex;align-items:center;gap:7px;margin-top:3px}.clase .cp img{width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid var(--y);flex:none}
