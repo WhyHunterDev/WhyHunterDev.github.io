@@ -224,6 +224,8 @@
       `<section class="sec" style="padding-top:0"><div class="wrap">${all.length ? `<div class="cl-week">${cols}</div>` : '<div class="empty">Pronto publicaremos el horario de clases de esta sede.</div>'}</div></section>`;
   };
 
+  // Acepta '@usuario', 'usuario' o un enlace de Instagram y devuelve solo el usuario.
+  const igUser = (v) => { const s = String(v || '').trim(); const m = s.match(/instagram\.com\/([A-Za-z0-9._]+)/i); return (m ? m[1] : s.replace(/^@+/, '').replace(/[/?#].*$/, '')).replace(/[^A-Za-z0-9._]/g, ''); };
   P.coaches = async () => {
     const list = data.entrenadores.filter(enSede);
     const cards = await Promise.all(list.map(async (c) => `<a class="coach rv" href="#/coach/${c.id}">${c.foto ? `<img src="${esc(await U(c.foto))}" alt="${esc(c.nombre)}" style="object-position:${esc(c.pos || 'center')}" loading="lazy">` : `<div class="ini">${esc((c.nombre.replace(/^coach\s+/i, '')[0] || 'S').toUpperCase())}</div>`}
@@ -241,7 +243,7 @@
     return `<section class="sec" style="padding-top:0"><div class="wrap prof">
       <div class="prof-ph">${c.foto ? `<img src="${esc(await U(c.foto))}" alt="${esc(c.nombre)}" style="object-position:${esc(c.pos || 'center')}">` : ''}<span class="tag y">${esc(sedeName(c.sede))}</span></div>
       <div>
-        <a class="back" href="#/coaches">← Todos los coaches</a>
+        <a class="back" href="#/coaches">← Todos los entrenadores</a>
         <span class="eyebrow">${esc(c.especialidad)}</span>
         <h1 class="h1" style="font-size:clamp(3rem,8vw,6rem)">${esc(c.nombre)}</h1>
         ${c.mensaje ? `<q>${esc(c.mensaje)}</q>` : ''}
@@ -249,7 +251,7 @@
         ${(c.logros || []).length ? `<div class="logros">${c.logros.map((l) => `<span>${esc(l)}</span>`).join('')}</div>` : ''}
         <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem">
           <a class="btn btn-y" target="_blank" rel="noopener" href="${SS.waLink(s.whatsapp, `Hola Santos Strength 👋 Quiero entrenar con ${c.nombre} en la sede ${s.nombre}.`)}">${WA}Entrenar con ${esc(c.nombre.replace(/^coach\s+/i, ''))}</a>
-          ${c.ig ? `<a class="btn btn-o" target="_blank" rel="noopener" href="https://instagram.com/${esc(c.ig.replace('@', ''))}">${esc(c.ig)}</a>` : ''}
+          ${igUser(c.ig) ? `<a class="btn btn-o" target="_blank" rel="noopener" href="https://instagram.com/${esc(igUser(c.ig))}/"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>@${esc(igUser(c.ig))}</a>` : ''}
         </div>
         <div class="pvid" ${c.video ? `data-cvid="${c.id}"` : ''}>${c.video ? `<video src="${esc(await U(c.video))}" muted playsinline preload="metadata"></video><span class="pl">▶</span>` : `<div class="ph"><b>Video de presentación</b>Muy pronto ${esc(c.nombre)} se presenta en video.</div>`}</div>
         ${fotos.length ? `<h4 style="margin-top:1.8rem;font-size:.8rem;letter-spacing:.2em;text-transform:uppercase;color:var(--mu)">En acción</h4><div class="pfotos">${fotos.join('')}</div>` : ''}
