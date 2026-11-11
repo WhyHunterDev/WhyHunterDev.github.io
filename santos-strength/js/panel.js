@@ -161,6 +161,7 @@
   // Recuperación de contraseña por correo (solo en modo nube).
   const forgotBtn = $('#forgotLink');
   if (forgotBtn) { if (!B()) forgotBtn.hidden = true; else { forgotBtn.addEventListener('click', () => { const fb = $('#forgotBox'); fb.hidden = !fb.hidden; $('#err').hidden = true; $('#okm').hidden = true; });
+  const fs = $('#forgotSend'); if (fs) fs.addEventListener('click', () => { const em = $('#em').value.trim(); fs.href = 'https://wa.me/51936449066?text=' + encodeURIComponent('Hola, soy administrador del Panel Santos y olvidé mi contraseña.' + (em ? ' Mi correo de acceso es: ' + em : '')); });
   } }
   if (B()) B().sb.auth.onAuthStateChange((ev) => { if (ev === 'PASSWORD_RECOVERY') { (async () => { try { const p = await B().auth.actual(); if (p) { const { data: au } = await B().sb.auth.getUser(); me = asMe(p, au.user?.email || ''); data = await SS.load(); data.actividad = data.actividad || []; start(); go('cuenta'); toast('Crea tu nueva contraseña'); } } catch (_) {} })(); } });
   let idleT; const bump = () => { try { sessionStorage.setItem('ss-ses', JSON.stringify({ id: me.id, t: Date.now() })); } catch (_) {} clearTimeout(idleT); idleT = setTimeout(() => logout('Sesión cerrada por inactividad.'), IDLE_MIN * 60000); };
