@@ -31,6 +31,20 @@
   };
   const cafeWa = (s) => { const w = String((s && s.cafeWhatsapp) || '').replace(/\D/g, ''); return w || (s && s.whatsapp) || ''; };
   const cafeHorarioTxt = (s) => { const p = (s && s.cafePedidos) || {}; return `${esc(p.diasTxt || 'Lun a Sáb')}${p.dom ? ' y domingos' : ''} · ${esc(p.desde || '')}–${esc(p.hasta || '')}`; };
+  // ---------- Sede más cercana (ubicación del visitante) ----------
+  const distKm = (a, b, c, d) => { const R = 6371, r = Math.PI / 180, x = Math.sin((c - a) * r / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin((d - b) * r / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); };
+  function geoNota(txt) { const n = document.createElement('div'); n.className = 'geonota'; n.textContent = txt; document.body.appendChild(n); setTimeout(() => n.remove(), 4200); }
+  function sedeCercana() {
+    try { localStorage.setItem('ss-geo-ask', '1'); } catch (_) {}
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const { latitude: la, longitude: lo } = pos.coords;
+      const cand = data.sedes.filter((s) => s.lat && s.lng).map((s) => ({ s, km: distKm(la, lo, +s.lat, +s.lng) })).sort((a, b) => a.km - b.km)[0];
+      if (!cand) return;
+      setSede(cand.s.id);
+      geoNota(`📍 Te mostramos la sede ${cand.s.nombre} (a ${cand.km < 1 ? Math.round(cand.km * 1000) + ' m' : cand.km.toFixed(1) + ' km'} de ti)`);
+    }, () => geoNota('No pudimos ver tu ubicación. Elige tu sede arriba.'), { enableHighAccuracy: false, timeout: 9000, maximumAge: 600000 });
+  }
   function setSede(id) { sede = id; try { localStorage.setItem('ss-sede', id); } catch (_) {} chrome(); render(true); }
 
   // ---------- Elementos fijos ----------
@@ -50,7 +64,7 @@
     e.stopPropagation(); $('.sedemenu')?.remove();
     const r = e.currentTarget.getBoundingClientRect(), m = document.createElement('div');
     m.className = 'sedemenu'; m.style.top = r.bottom + 8 + 'px'; m.style.right = Math.max(12, innerWidth - r.right) + 'px';
-    m.innerHTML = [['todas', 'Todas las sedes'], ...data.sedes.map((s) => [s.id, 'Sede ' + s.nombre])].map(([id, n]) => `<button data-sede="${id}" class="${id === sede ? 'on' : ''}">${esc(n)}${id === sede ? ' ✓' : ''}</button>`).join('');
+    m.innerHTML = (navigator.geolocation ? '<button data-cerca class="cerca">📍 La más cercana a mí</button>' : '') + [['todas', 'Todas las sedes'], ...data.sedes.map((s) => [s.id, 'Sede ' + s.nombre])].map(([id, n]) => `<button data-sede="${id}" class="${id === sede ? 'on' : ''}">${esc(n)}${id === sede ? ' ✓' : ''}</button>`).join('');
     document.body.appendChild(m);
   });
   function moveInd() {
@@ -386,6 +400,8 @@
     const t = (s) => e.target.closest(s);
     if (!t('.sedemenu') && !t('#sedePill')) $('.sedemenu')?.remove();
     let el;
+    if ((el = t('[data-cerca]'))) { $('.sedemenu')?.remove(); $('#geoAsk')?.remove(); sedeCercana(); return; }
+    if ((el = t('[data-geono]'))) { $('#geoAsk')?.remove(); return; }
     if ((el = t('[data-sede]'))) { $('.sedemenu')?.remove(); setSede(el.dataset.sede); return; }
     if ((el = t('[data-pick]'))) { $('#sheet').classList.remove('on'); setTimeout(() => setSede(el.dataset.pick), 300); return; }
     if ((el = t('[data-wa]'))) { e.preventDefault(); openSheet(el.dataset.plan); return; }
@@ -439,6 +455,11 @@
   if (data.config.mantenimiento) { pantallaMantenimiento(data.config, data.sedes); return; }
 
   chrome(); applyTema(); await render();
+  try {
+    if (navigator.geolocation && !localStorage.getItem('ss-sede') && !localStorage.getItem('ss-geo-ask') && data.sedes.filter((x) => x.lat).length > 1) {
+      setTimeout(() => { const g = document.createElement('div'); g.id = 'geoAsk'; g.innerHTML = '<span>📍 ¿Te mostramos la sede más cercana a ti?</span><button data-cerca>Sí, mostrar</button><button data-geono aria-label="No">×</button>'; document.body.appendChild(g); try { localStorage.setItem('ss-geo-ask', '1'); } catch (_) {} }, 1800);
+    }
+  } catch (_) {}
   // ---------- Métricas (solo en la nube) ----------
   const BK = window.SS_BACKEND;
   if (BK && BK.metrica) {
