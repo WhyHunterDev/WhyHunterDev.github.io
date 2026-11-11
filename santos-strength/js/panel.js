@@ -223,10 +223,10 @@
   const sedeOpts = (todas = true) => { const s = mySede(); if (s && !isAdmin()) return [[s, sedeName(s)]]; return [...(todas ? [['todas', 'Todas las sedes']] : []), ...data.sedes.map((x) => [x.id, x.nombre])]; };
   const DEFS = {
     promos: { key: 'publicaciones', etiqueta: 'promo o evento', estado: true,
-      filtro: (p) => isAdmin() || !mySede() || p.sede === mySede() || p.sede === 'todas',
-      puede: (p) => isAdmin() || p.sede === mySede() || !mySede(),
+      filtro: () => true,                                   // recepción ve y edita promos de todas las sedes
+      puede: () => isAdmin() || me.rol === 'recepcion' || !mySede(),
       nuevo: () => ({ id: SS.uid(), tipo: 'Promo', titulo: '', descripcion: '', sede: mySede() || 'todas', media: '', mediaTipo: 'image', inicio: SS.today(), fin: SS.today(15), estado: nuevoEstado(), autor: me.nombre, creado: Date.now() }),
-      campos: () => [['tipo', 'Tipo', 'select', { opts: [['Promo', 'Promoción'], ['Evento', 'Evento'], ['Aviso', 'Aviso']] }], ['sede', 'Sede', 'select', { opts: sedeOpts() }], ['titulo', 'Título', 'text', { full: 1, req: 1, max: 80 }], ['descripcion', 'Descripción', 'area'], ['inicio', 'Desde', 'date'], ['fin', 'Hasta', 'date', { hint: 'Se oculta sola cuando vence.' }], ['media', 'Foto o video', 'media', { accept: 'image/*,video/*' }]],
+      campos: () => [['tipo', 'Tipo', 'select', { opts: [['Promo', 'Promoción'], ['Evento', 'Evento'], ['Aviso', 'Aviso']] }], ['sede', 'Sede', 'select', { opts: [['todas', 'Todas las sedes'], ...data.sedes.map((x) => [x.id, x.nombre])] }], ['titulo', 'Título', 'text', { full: 1, req: 1, max: 80 }], ['descripcion', 'Descripción', 'area'], ['inicio', 'Desde', 'date'], ['fin', 'Hasta', 'date', { hint: 'Se oculta sola cuando vence.' }], ['media', 'Foto o video', 'media', { accept: 'image/*,video/*' }]],
       img: (p) => p.media, nombre: (p) => p.titulo, sub: (p) => `${p.tipo} · ${sedeName(p.sede)} · hasta ${p.fin || '—'}${p.fin && p.fin < SS.today() ? ' (vencido)' : ''}`,
       antes: (p) => { p.mediaTipo = isVid(p.media) ? 'video' : 'image'; } },
     galeria: { key: 'galeria', etiqueta: 'foto o video', estado: true, paginar: true,
