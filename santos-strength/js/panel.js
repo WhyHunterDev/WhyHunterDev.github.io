@@ -270,6 +270,17 @@
     if (cafeTab === 'banner') return title('Cafetín') + tabs + `<div class="panel">${await form(data.cafetin, [['titulo', 'Título', 'text'], ['acento', 'Palabra resaltada', 'text'], ['texto', 'Texto', 'area'], ['imagen', 'Foto de portada', 'media']], 'fb')}<button class="btn btn-y" data-savecfg="fb:cafetin" style="margin-top:16px">Guardar</button></div>`;
     return title('Cafetín', 'Usa «Disponible / Agotado» para actualizar el stock en un toque.') + (editing ? '' : tabs) + await crudList(DEF);
   };
+  const TEMAS_UI = [['', 'Normal (sin tema)'], ['navidad', '🎄 Navidad'], ['halloween', '🎃 Halloween'], ['anionuevo', '🎆 Año Nuevo'], ['fiestaspatrias', '🇵🇪 Fiestas Patrias'], ['sanvalentin', '❤️ San Valentín']];
+  function temaSec(c) {
+    const cur = c.tema || '', opts = TEMAS_UI.map(([v, n]) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${n}</option>`).join('');
+    return `<details class="panel"><summary>🎉 Tema de temporada</summary><p class="d">Dale a tu web un diseño especial por fechas (nieve, luces, colores) y escribe tu promoción. Cámbialo cuando quieras.</p>
+      <div id="ctema" class="form">
+        <label>Temporada<select data-k="tema">${opts}</select></label>
+        <label class="full">Texto del banner de promoción<input data-k="temaPromo" maxlength="90" value="${esc(c.temaPromo || '')}" placeholder="Ej: 2×1 en inscripción solo diciembre"></label>
+      </div>
+      <p class="hint" style="margin-top:4px">Déjalo en «Normal» para quitar el tema. El texto vacío usa el mensaje por defecto de cada temporada.</p>
+      <button class="btn btn-y" data-savecfg="ctema" style="margin-top:14px">Guardar tema</button></details>`;
+  }
   V.contenido = async () => {
     const c = data.config, blk = async (id, t, d, obj, f, open) => `<details class="panel" ${open ? 'open' : ''}><summary>${t}</summary><p class="d">${d}</p>${await form(obj, f, id)}<button class="btn btn-y" data-savecfg="${id}" style="margin-top:16px">Guardar</button></details>`;
     return title('Contenido de inicio', 'Toca cada bloque para editarlo. Los cambios se ven en la web al guardar.') +
@@ -280,7 +291,8 @@
       await blk('c5', '🎬 Encabezado de videos', 'El título sobre el carrusel de videos.', c, [['videos.eyebrow', 'Texto pequeño', 'text'], ['videos.titulo', 'Título', 'text'], ['videos.acento', 'Palabra resaltada', 'text'], ['videos.texto', 'Descripción', 'area']]) +
       await blk('c6', '✅ Qué incluye tu plan', 'Beneficios que se muestran en Planes.', c, [['incluye', 'Beneficios', 'rows', { cols: 'i,t,d', rows: 8, hint: 'Uno por línea: Emoji | Título | Descripción' }]]) +
       await blk('c7', '🔗 Redes sociales', 'Enlaces del pie de página.', c, [['redes.instagram', 'Instagram', 'url'], ['redes.tiktok', 'TikTok', 'url'], ['redes.facebook', 'Facebook', 'url']]) +
-      await blk('c8', '🛡️ Aprobación', 'Si lo activas, lo que suban recepción y cafetín espera tu visto bueno antes de salir.', c, [['aprobacion', 'Revisar publicaciones antes de mostrarlas', 'bool']]);
+      await blk('c8', '🛡️ Aprobación', 'Si lo activas, lo que suban recepción y cafetín espera tu visto bueno antes de salir.', c, [['aprobacion', 'Revisar publicaciones antes de mostrarlas', 'bool']]) +
+      (c.temaExtra ? temaSec(c) : '');
   };
   V.planes = async () => title('Planes y precios', 'Para un descuento por evento, llena «Precio evento» y su fecha final. Al vencer vuelve al precio normal.') +
     (await Promise.all(data.planes.map(async (p, i) => `<div class="panel"><h3>${esc(p.nombre)}</h3>${await form(p, [['nombre', 'Nombre', 'text'], ['meses', 'Meses', 'num'], ['precio', 'Precio normal (S/)', 'num'], ['destacado', 'Recomendado', 'bool'], ['precioEvento', 'Precio evento (S/)', 'num'], ['eventoTexto', 'Nombre del evento', 'text', { hint: 'Ej.: Black Friday' }], ['eventoHasta', 'Evento hasta', 'date']], 'pl' + i)}<div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-y" data-saveplan="${i}">Guardar</button><button class="btn btn-bad btn-sm" data-delplan="${i}" style="margin-left:auto">Eliminar plan</button></div></div>`))).join('') +
