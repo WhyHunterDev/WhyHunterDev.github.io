@@ -421,3 +421,21 @@ footer a:hover{color:var(--y)}
 .sheet .opt small{color:var(--mu);font-weight:400;display:block;font-size:.78rem}
 .flash{animation:flash .5s}
 @keyframes flash{50%{opacity:.35;transform:translateY(6px)}}
+
+/* ===== Temas de temporada (se activan desde el Gestor) ===== */
+#temaFall{position:fixed;inset:0;pointer-events:none;z-index:48;overflow:hidden}
+#temaFall span{position:absolute;top:-6%;will-change:transform;animation:temaFall linear infinite;opacity:.85;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))}
+@keyframes temaFall{0%{transform:translateY(-10vh) rotate(0)}100%{transform:translateY(110vh) rotate(340deg)}}
+#temaBadge{position:fixed;left:16px;bottom:88px;z-index:46;display:flex;align-items:center;gap:.5rem;background:var(--tgrad,#141414);color:#fff;border:1px solid rgba(255,255,255,.14);padding:.55rem .9rem;border-radius:999px;font-weight:700;font-size:.82rem;box-shadow:0 12px 30px rgba(0,0,0,.45);max-width:78vw;animation:badgeIn .5s var(--ease) both}
+@keyframes badgeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media(min-width:900px){#temaBadge{bottom:24px}}
+html[data-tema="navidad"]{--tgrad:linear-gradient(90deg,#c0392b,#1f9d55)}
+html[data-tema="navidad"] .marquee{background:linear-gradient(90deg,#c0392b,#1f9d55);color:#fff}
+html[data-tema="halloween"]{--tgrad:linear-gradient(90deg,#ff7518,#7b2ff7)}
+html[data-tema="halloween"] .marquee{background:linear-gradient(90deg,#ff7518,#7b2ff7);color:#fff}
+html[data-tema="anionuevo"]{--tgrad:linear-gradient(90deg,#b8860b,#f5c400)}
+html[data-tema="fiestaspatrias"]{--tgrad:linear-gradient(90deg,#d91023,#b00)}
+html[data-tema="fiestaspatrias"] .marquee{background:linear-gradient(90deg,#d91023,#fff,#d91023);color:#111}
+html[data-tema="sanvalentin"]{--tgrad:linear-gradient(90deg,#ff4d6d,#ff8fa3)}
+html[data-tema="sanvalentin"] .marquee{background:linear-gradient(90deg,#ff4d6d,#ff8fa3);color:#fff}
+@media(prefers-reduced-motion:reduce){#temaFall{display:none}}

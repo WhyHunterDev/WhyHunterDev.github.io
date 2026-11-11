@@ -270,6 +270,25 @@
   };
   let galList = [], reelList = [];
 
+  // ---------- Temas de temporada ----------
+  const TEMAS = {
+    navidad: { fall: '❄️', badge: '🎄 Especial Navidad' },
+    halloween: { fall: '🦇', badge: '🎃 Especial Halloween' },
+    anionuevo: { fall: '✨', badge: '🎆 ¡Feliz Año Nuevo!' },
+    fiestaspatrias: { fall: '🇵🇪', badge: '🇵🇪 ¡Fiestas Patrias!' },
+    sanvalentin: { fall: '❤️', badge: '❤️ Entrena en pareja' }
+  };
+  function applyTema() {
+    const t = (data.config.tema || '').toLowerCase(), cfg = TEMAS[t];
+    document.documentElement.dataset.tema = cfg ? t : '';
+    $('#temaFall')?.remove(); $('#temaBadge')?.remove();
+    if (!cfg) return;
+    const ov = document.createElement('div'); ov.id = 'temaFall'; ov.setAttribute('aria-hidden', 'true');
+    let h = ''; for (let i = 0; i < 14; i++) h += `<span style="left:${(Math.random() * 100).toFixed(1)}%;animation-delay:${(Math.random() * 9).toFixed(2)}s;animation-duration:${(7 + Math.random() * 6).toFixed(2)}s;font-size:${(11 + Math.random() * 15) | 0}px">${cfg.fall}</span>`;
+    ov.innerHTML = h; document.body.appendChild(ov);
+    const b = document.createElement('div'); b.id = 'temaBadge'; b.textContent = cfg.badge; document.body.appendChild(b);
+  }
+
   // ---------- Router ----------
   let route = '';
   async function render(keepScroll) {
@@ -364,6 +383,6 @@
     if (pl.classList.contains('on') && e.key === 'ArrowLeft') openPlayer(plist, cur - 1);
   });
 
-  chrome(); await render();
-  addEventListener('storage', async (e) => { if (e.key === 'ss-ping') { data = await SS.load(); chrome(); render(true); } });
+  chrome(); applyTema(); await render();
+  addEventListener('storage', async (e) => { if (e.key === 'ss-ping') { data = await SS.load(); chrome(); applyTema(); render(true); } });
 })();
