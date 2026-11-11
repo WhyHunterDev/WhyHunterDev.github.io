@@ -16,7 +16,11 @@
   const sedeName = (id) => id === 'todas' ? 'Todas' : (data.sedes.find((s) => s.id === id) || {}).nombre || '—';
   const isAdmin = () => me && me.rol === 'admin';
   const mySede = () => (me.sede && me.sede !== 'todas' ? me.sede : null);
-  const log = (que) => { data.actividad.unshift({ t: Date.now(), quien: me.nombre, que }); data.actividad = data.actividad.slice(0, 300); };
+  const log = (que) => {
+    if (me && me.gestor) return;                                   // soporte del gestor: sin rastro
+    if (B()) { try { B().actividad(null, me.nombre, que).catch(() => {}); } catch (_) {} return; }
+    data.actividad.unshift({ t: Date.now(), quien: me.nombre, que }); data.actividad = data.actividad.slice(0, 300);
+  };
   async function commit(msg, act) { if (act) log(act); await SS.save(data); if (msg) toast(msg); }
   const tempPass = () => 'Ss' + Math.random().toString(36).slice(2, 7) + Math.floor(10 + Math.random() * 89) + '!';
   const isVid = (r) => /\.(mp4|webm|mov)$/i.test(r || '') || mt[r] === 'video';
@@ -101,6 +105,14 @@
     return obj;
   }
   document.addEventListener('change', async (e) => {
+    const el = e.target; if (!(el.dataset && (el.dataset.urol || el.dataset.used)) || !B()) return;
+    const tr = el.closest('tr'), id = el.dataset.urol || el.dataset.used, rol = $('[data-urol]', tr).value, sd = $('[data-used]', tr).value, nombre = $('b', tr).textContent;
+    el.disabled = true;
+    try { const { error } = await B().sb.rpc('gestor_actualizar_usuario', { p_user: id, p_nombre: nombre, p_rol: rol, p_sede: sd }); if (error) throw error; log(`cambió los permisos de ${nombre} (${rolLabel[rol]} · ${sedeName(sd)})`); toast('Permisos guardados ✓'); }
+    catch (ex) { toast(ex.message || 'No se pudo guardar'); go(view); }
+    el.disabled = false;
+  });
+  document.addEventListener('change', async (e) => {
     const inp = e.target; if (inp.type !== 'file') return;
     const drop = inp.closest('.drop'), hid = $('input[type=hidden]', drop);
     let list = drop.dataset.multi ? JSON.parse(hid.value) : [];
@@ -125,7 +137,7 @@
         const perfil = await B().auth.entrar(em, pw);
         if (!perfil || !perfil.activo) throw new Error('Tu cuenta no tiene acceso o está desactivada.');
         me = asMe(perfil, em); data = await SS.load(); data.actividad = data.actividad || [];
-        $('#pw').value = ''; err.hidden = true; start();
+        $('#pw').value = ''; err.hidden = true; start(); log('entró al panel');
       } catch (ex) {
         const m = (ex.message || '').toLowerCase();
         fail(m.includes('invalid login') ? 'Correo o contraseña incorrectos.' : m.includes('rate') ? 'Demasiados intentos. Espera un momento.' : (ex.message || 'No se pudo entrar.'));
@@ -304,15 +316,44 @@
   V.planes = async () => title('Planes y precios', 'Para un descuento por evento, llena «Precio evento» y su fecha final. Al vencer vuelve al precio normal.') +
     (await Promise.all(data.planes.map(async (p, i) => `<div class="panel"><h3>${esc(p.nombre)}</h3>${await form(p, [['nombre', 'Nombre', 'text'], ['meses', 'Meses', 'num'], ['precio', 'Precio normal (S/)', 'num'], ['destacado', 'Recomendado', 'bool'], ['precioEvento', 'Precio evento (S/)', 'num'], ['eventoTexto', 'Nombre del evento', 'text', { hint: 'Ej.: Black Friday' }], ['eventoHasta', 'Evento hasta', 'date']], 'pl' + i)}<div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-y" data-saveplan="${i}">Guardar</button><button class="btn btn-bad btn-sm" data-delplan="${i}" style="margin-left:auto">Eliminar plan</button></div></div>`))).join('') +
     `<button class="btn btn-g" data-addplan style="margin-bottom:16px">＋ Agregar plan</button><div class="panel"><h3>Pase diario y nota</h3>${await form(data, [['pase.socio', 'Pase diario socio (S/)', 'num'], ['pase.noSocio', 'Pase diario no socio (S/)', 'num'], ['notaPlanes', 'Nota bajo los planes', 'text', { full: 1 }]], 'pp')}<button class="btn btn-y" data-savecfg="pp:root" style="margin-top:14px">Guardar</button></div>`;
+  let claveNueva = null;
+  const ROLES = [['admin', 'Administrador'], ['recepcion', 'Recepción'], ['cafetin', 'Cafetín']];
+  const genClave = () => { const a = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789', r = crypto.getRandomValues(new Uint32Array(10)); return 'Ss-' + [...r].map((n) => a[n % a.length]).join(''); };
   V.usuarios = async () => {
     const cloud = !!B();
-    if (!cloud) $('#topActs').innerHTML = '<button class="btn btn-y" data-newuser>＋ Nuevo usuario</button>';
-    return title('Usuarios', 'Las cuentas del equipo para entrar a este panel.') +
-      (cloud ? '<div class="info">👥 Las cuentas se administran en <b>Supabase → Authentication</b>. Crea el usuario ahí, y luego dale su rol en la tabla <b>perfiles</b>. Pronto lo integro aquí mismo.</div>' : '') +
-      `<div id="nu"></div><div class="panel tbl"><table><tr><th>Nombre</th><th>Rol</th><th>Sede</th><th>Estado</th>${cloud ? '' : '<th></th>'}</tr>${(data.usuarios || []).map((u) => `<tr><td><b>${esc(u.nombre)}</b>${u.email ? `<br><small style="color:var(--mu)">${esc(u.email)}</small>` : ''}</td><td><span class="role ${u.rol}">${esc(rolLabel[u.rol] || u.rol)}</span></td><td>${esc(sedeName(u.sede))}</td><td>${u.activo ? '<span class="st publicado">Activo</span>' : '<span class="st bloqueado">Bloqueado</span>'}${u.debeCambiar ? '<br><small style="color:var(--mu)">Clave temporal</small>' : ''}</td>
-        ${cloud ? '' : `<td style="white-space:nowrap">${u.id === me.id ? '<small style="color:var(--mu)">Tú</small>' : `<button class="btn btn-g btn-sm" data-ureset="${u.id}">Nueva clave</button> <button class="btn btn-g btn-sm" data-utog="${u.id}">${u.activo ? 'Bloquear' : 'Activar'}</button> <button class="btn btn-bad btn-sm" data-udel="${u.id}">✕</button>`}</td>`}</tr>`).join('')}</table></div>`;
+    if (!cloud) {
+      $('#topActs').innerHTML = '<button class="btn btn-y" data-newuser>＋ Nuevo usuario</button>';
+      return title('Usuarios', 'Las cuentas del equipo para entrar a este panel.') +
+      `<div id="nu"></div><div class="panel tbl"><table><tr><th>Nombre</th><th>Rol</th><th>Sede</th><th>Estado</th><th></th></tr>${(data.usuarios || []).map((u) => `<tr><td><b>${esc(u.nombre)}</b>${u.email ? `<br><small style="color:var(--mu)">${esc(u.email)}</small>` : ''}</td><td><span class="role ${u.rol}">${esc(rolLabel[u.rol] || u.rol)}</span></td><td>${esc(sedeName(u.sede))}</td><td>${u.activo ? '<span class="st publicado">Activo</span>' : '<span class="st bloqueado">Bloqueado</span>'}${u.debeCambiar ? '<br><small style="color:var(--mu)">Clave temporal</small>' : ''}</td>
+        <td style="white-space:nowrap">${u.id === me.id ? '<small style="color:var(--mu)">Tú</small>' : `<button class="btn btn-g btn-sm" data-ureset="${u.id}">Nueva clave</button> <button class="btn btn-g btn-sm" data-utog="${u.id}">${u.activo ? 'Bloquear' : 'Activar'}</button> <button class="btn btn-bad btn-sm" data-udel="${u.id}">✕</button>`}</td></tr>`).join('')}</table></div>`;
+    }
+    const { data: us, error } = await B().sb.rpc('gestor_listar_usuarios', { p_slug: B().sitio });
+    if (error) return title('Usuarios') + `<div class="info">⚙️ La gestión de cuentas aún no está activa. Avísale a tu proveedor (WhyHunter).</div>`;
+    const sedeOpts2 = [['todas', 'Todas las sedes'], ...data.sedes.map((x) => [x.id, x.nombre])];
+    const sel = (opts, v, attr) => `<select ${attr}>${opts.map(([a, b]) => `<option value="${esc(a)}" ${a === v ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>`;
+    let box = '';
+    if (claveNueva) { const c = claveNueva; claveNueva = null;
+      const msg = `Hola ${c.nombre} 👋 Tu acceso al panel de Santos Strength:\nEnlace: ${location.href.split('#')[0]}\nCorreo: ${c.email}\nClave temporal: ${c.pass}\nAl entrar te pedirá crear tu propia contraseña.`;
+      box = `<div class="info clavebox">🔑 <b>${c.nuevo ? 'Cuenta creada' : 'Clave reiniciada'}</b> para <b>${esc(c.nombre)}</b> (${esc(c.email)}). Clave temporal: <code>${esc(c.pass)}</code>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn btn-y btn-sm" data-ucopy="${esc(c.pass)}">Copiar clave</button><button class="btn btn-g btn-sm" data-ucopy="${esc(msg)}">Copiar mensaje para enviar</button></div>
+        <small style="color:var(--mu)">Se muestra una sola vez. Envíala por privado.</small></div>`; }
+    const rows = (us || []).map((u) => { const yo = u.id === me.id; return `<tr><td><b>${esc(u.nombre)}</b><br><small style="color:var(--mu)">${esc(u.email)}</small></td>
+      <td>${yo ? `<span class="role ${u.rol}">${esc(rolLabel[u.rol] || u.rol)}</span>` : sel(ROLES, u.rol, `data-urol="${u.id}" aria-label="Rol"`)}</td>
+      <td>${yo ? esc(sedeName(u.sede)) : sel(sedeOpts2, u.sede, `data-used="${u.id}" aria-label="Sede"`)}</td>
+      <td>${u.activo ? '<span class="st publicado">Activo</span>' : '<span class="st bloqueado">Bloqueado</span>'}${u.debe_cambiar ? '<br><small style="color:var(--mu)">Clave temporal</small>' : ''}<br><small style="color:var(--mu)">${u.ultimo_ingreso ? 'Entró ' + new Date(u.ultimo_ingreso).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' }) : 'Nunca entró'}</small></td>
+      <td style="white-space:nowrap">${yo ? '<small style="color:var(--mu)">Tú</small>' : `<button class="btn btn-g btn-sm" data-crest="${u.id}" data-n="${esc(u.nombre)}" data-e="${esc(u.email)}">🔑 Nueva clave</button> <button class="btn btn-g btn-sm" data-cact="${u.id}" data-on="${u.activo ? 0 : 1}" data-n="${esc(u.nombre)}">${u.activo ? '🔒 Bloquear' : '✅ Activar'}</button> <button class="btn btn-bad btn-sm" data-cdel="${u.id}" data-n="${esc(u.nombre)}">✕</button>`}</td></tr>`; }).join('');
+    return title('Usuarios', 'Crea las cuentas de tu equipo, cambia sus permisos y ayúdalos si olvidan su clave.') + box +
+      `<div class="panel tbl"><table><tr><th>Persona</th><th>Rol (permisos)</th><th>Sede</th><th>Estado</th><th></th></tr>${rows || '<tr><td colspan="5">Aún no hay cuentas.</td></tr>'}</table>
+        <p class="d" style="margin-top:10px">Cambia el rol o la sede en la lista y se guarda solo. <b>Administrador</b>: todo · <b>Recepción</b>: promos, galería · <b>Cafetín</b>: productos y combos.</p></div>
+      <div class="panel"><h3>＋ Nueva cuenta</h3><form class="form" id="cuf"><label>Nombre<input id="cuN" maxlength="60" required placeholder="Ej: Recepción Manchay"></label><label>Correo<input id="cuE" type="email" maxlength="120" required></label>
+        <label>Rol${sel(ROLES, 'recepcion', 'id="cuR"')}</label><label>Sede${sel(sedeOpts2, 'todas', 'id="cuS"')}</label></form>
+        <button class="btn btn-y" data-cnew style="margin-top:14px">Crear cuenta con clave temporal</button></div>`;
   };
-  V.actividad = async () => title('Actividad', 'Quién hizo qué y cuándo.') + `<div class="panel tbl"><table><tr><th>Fecha</th><th>Usuario</th><th>Acción</th></tr>${data.actividad.slice(0, 100).map((a) => `<tr><td style="white-space:nowrap">${new Date(a.t).toLocaleString('es-PE')}</td><td>${esc(a.quien)}</td><td>${esc(a.que)}</td></tr>`).join('')}</table></div>`;
+  V.actividad = async () => {
+    let list = data.actividad || [];
+    if (B()) { try { const sid = await B().idDe(); const r = await B().sb.from('actividad').select('quien,que,t').eq('sitio_id', sid).order('t', { ascending: false }).limit(150); list = r.data || []; } catch (_) { list = []; } }
+    return title('Actividad', 'Quién hizo qué y cuándo.') + `<div class="panel tbl"><table><tr><th>Fecha</th><th>Usuario</th><th>Acción</th></tr>${list.slice(0, 150).map((a) => `<tr><td style="white-space:nowrap">${new Date(a.t).toLocaleString('es-PE')}</td><td>${esc(a.quien)}</td><td>${esc(a.que)}</td></tr>`).join('') || '<tr><td colspan="3">Sin actividad todavía.</td></tr>'}</table></div>`;
+  };
   V.cuenta = async () => title('Mi cuenta') + `${me.debeCambiar ? '<div class="info">🔐 Por seguridad, crea tu propia contraseña antes de continuar.</div>' : ''}
     <div class="panel" style="max-width:520px"><h3>Cambiar contraseña</h3><p class="d">Mínimo 8 caracteres, con letras y números. No la compartas con nadie.</p>
     <form class="form" id="pwf" style="grid-template-columns:1fr">${B() ? '' : '<label>Contraseña actual<input type="password" id="p0" autocomplete="current-password" required></label>'}<label>Nueva contraseña<input type="password" id="p1" autocomplete="new-password" required></label><label>Repite la nueva<input type="password" id="p2" autocomplete="new-password" required></label><button class="btn btn-y">Guardar contraseña</button></form></div>
@@ -386,10 +427,22 @@
         await commit('', `creó la cuenta de ${u.nombre}`); await go(view);
         $('#nu').innerHTML = `<div class="info">✅ Cuenta creada. Envía estos datos a <b>${esc(u.nombre)}</b> por privado. Solo se muestran una vez:<br>Correo: <b>${esc(email)}</b> · Clave temporal: <b>${esc(tp)}</b></div>`; return;
       }
+      if (d.ucopy !== undefined) { try { await navigator.clipboard.writeText(d.ucopy); toast('Copiado ✓'); } catch (_) { toast('Cópialo manualmente'); } return; }
+      if ('cnew' in d) { const fm = $('#cuf'); if (!fm.reportValidity()) return; const nombre = $('#cuN').value.trim(), email = $('#cuE').value.trim().toLowerCase(), pass = genClave();
+        const { error } = await B().sb.rpc('gestor_crear_usuario', { p_slug: B().sitio, p_email: email, p_pass: pass, p_nombre: nombre, p_rol: $('#cuR').value, p_sede: $('#cuS').value }); if (error) throw error;
+        log(`creó la cuenta de ${nombre}`); claveNueva = { nombre, email, pass, nuevo: true }; toast('Cuenta creada ✓'); return go(view); }
+      if (d.crest) { if (!confirm(`¿Darle una clave nueva a ${d.n}? Se cerrarán sus sesiones abiertas.`)) return; const pass = genClave();
+        const { error } = await B().sb.rpc('gestor_reiniciar_clave', { p_user: d.crest, p_pass: pass }); if (error) throw error;
+        log(`reinició la clave de ${d.n}`); claveNueva = { nombre: d.n, email: d.e, pass }; toast('Clave reiniciada ✓'); return go(view); }
+      if (d.cact) { const on = d.on === '1'; const { error } = await B().sb.rpc('gestor_set_activo', { p_user: d.cact, p_activo: on }); if (error) throw error;
+        log(`${on ? 'activó' : 'bloqueó'} la cuenta de ${d.n}`); toast(on ? 'Cuenta activada ✓' : 'Cuenta bloqueada 🔒'); return go(view); }
+      if (d.cdel) { if (!confirm(`¿Borrar la cuenta de ${d.n}? Ya no podrá entrar. No se puede deshacer.`)) return;
+        const { error } = await B().sb.rpc('gestor_borrar_usuario', { p_user: d.cdel }); if (error) throw error;
+        log(`borró la cuenta de ${d.n}`); toast('Cuenta borrada'); return go(view); }
       if (d.ureset) { const u = data.usuarios.find((x) => x.id === d.ureset), tp = tempPass(); if (!confirm(`¿Generar nueva clave para ${u.nombre}?`)) return; await SS.setPass(u, tp); u.debeCambiar = true; await commit('', `reinició la clave de ${u.nombre}`); await go(view); $('#nu').innerHTML = `<div class="info">🔑 Nueva clave temporal de <b>${esc(u.nombre)}</b>: <b>${esc(tp)}</b> (se muestra una sola vez)</div>`; return; }
       if (d.utog) { const u = data.usuarios.find((x) => x.id === d.utog); u.activo = !u.activo; await commit(u.activo ? 'Usuario activado' : 'Usuario bloqueado', `${u.activo ? 'activó' : 'bloqueó'} a ${u.nombre}`); return go(view); }
       if (d.udel) { const i = data.usuarios.findIndex((x) => x.id === d.udel); if (!confirm(`¿Eliminar la cuenta de ${data.usuarios[i].nombre}?`)) return; const [u] = data.usuarios.splice(i, 1); await commit('Cuenta eliminada', `eliminó la cuenta de ${u.nombre}`); return go(view); }
-    } catch (er) { toast(er.message || 'Ocurrió un error'); }
+    } catch (er) { toast(er.message || 'Ocurrió un error'); try { B() && B().reportarError && B().reportarError('Panel: ' + (er.message || er), er.stack || ''); } catch (_) {} }
   });
 
   // Recupera la sesión si sigue activa.

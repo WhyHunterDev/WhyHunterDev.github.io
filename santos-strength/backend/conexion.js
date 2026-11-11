@@ -72,6 +72,27 @@
     async cambiarPass(nueva) { const { error } = await sb.auth.updateUser({ password: nueva }); if (error) throw error; }
   };
 
+  // Registro de errores de la web y del panel (solo lo ve el gestor).
+  const ESGESTOR = /panel-maestro|\/gestor\//i.test(location.pathname);
+  const ORIGEN = /panel/i.test(location.pathname) ? 'panel' : 'web';
+  let nErr = 0; const vistos = new Set();
+  function reportarError(msg, det) {
+    try {
+      if (ESGESTOR) return;
+      msg = String(msg || '').slice(0, 300);
+      if (!msg || /^Script error\.?$/i.test(msg) || /ResizeObserver loop/i.test(msg) || vistos.has(msg) || ++nErr > 8) return;
+      vistos.add(msg);
+      sb.rpc('registrar_error', { p_slug: CONFIG.sitio, p_origen: ORIGEN, p_msg: msg, p_det: String(det || '').slice(0, 1500),
+        p_url: location.href.slice(0, 300), p_ua: navigator.userAgent.slice(0, 200) }).then(() => {}, () => {});
+    } catch (_) {}
+  }
+  addEventListener('error', (e) => {
+    const t = e.target;
+    if (t && t !== window && (t.src || t.href)) return reportarError('No cargó un archivo: ' + (t.currentSrc || t.src || t.href));
+    reportarError(e.message, (e.filename || '') + ':' + (e.lineno || '') + ':' + (e.colno || '') + '\n' + ((e.error && e.error.stack) || ''));
+  }, true);
+  addEventListener('unhandledrejection', (e) => { const r = e.reason || {}; reportarError('Promesa fallida: ' + (r.message || r), r.stack || ''); });
+
   // Expuesto para que store.js lo use si está presente.
-  window.SS_BACKEND = { sb, cargar, guardarClave, subir, actividad, metrica, sitio: CONFIG.sitio, auth, idDe };
+  window.SS_BACKEND = { sb, cargar, guardarClave, subir, actividad, metrica, reportarError, sitio: CONFIG.sitio, auth, idDe };
 })();

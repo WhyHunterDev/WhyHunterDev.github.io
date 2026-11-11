@@ -104,6 +104,7 @@ th{color:var(--mu);font-size:.66rem;letter-spacing:.08em;text-transform:uppercas
 .tema:hover{border-color:var(--ac);transform:translateY(-2px);background:rgba(124,108,255,.1)}
 .tema b{font-size:1.2rem;line-height:1}
 .clavebox{background:rgba(0,230,168,.08);border:1px solid rgba(0,230,168,.35);border-radius:14px;padding:14px;margin-bottom:14px;display:grid;gap:8px;font-size:.88rem}.clavebox .cv{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.clavebox code{font-family:var(--mono);font-size:1.05rem;background:rgba(0,0,0,.4);padding:.45rem .7rem;border-radius:9px;color:var(--ok);letter-spacing:.04em}.clavebox small{color:var(--mu)}
+.uso-grid{display:grid;grid-template-columns:minmax(200px,1fr) 2fr;gap:18px}@media(max-width:760px){.uso-grid{grid-template-columns:1fr}}.uso-grid h4{font-size:.8rem;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}.uso-bar{display:flex;justify-content:space-between;padding:.45rem .7rem;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;font-size:.86rem}.uso-bar b{font-family:var(--mono);color:var(--ac2)}.uso-list{display:grid;gap:6px;font-size:.84rem;max-height:340px;overflow:auto}.uso-list small{color:var(--mu);font-family:var(--mono);font-size:.72rem}.err{border:1px solid var(--line);border-radius:10px;padding:.55rem .7rem;background:rgba(255,90,106,.04)}.err summary{cursor:pointer;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}.err pre{white-space:pre-wrap;font-family:var(--mono);font-size:.72rem;color:#cbd;margin-top:8px;max-height:220px;overflow:auto}
 .note{background:rgba(124,108,255,.08);border:1px solid rgba(124,108,255,.25);color:#cfc7ff;border-radius:12px;padding:.8rem 1rem;font-size:.85rem;margin-bottom:16px;display:flex;gap:.6rem;align-items:flex-start}
 .sw{position:relative;width:42px;height:24px;border-radius:999px;background:#333;transition:.2s;flex:none}
 .sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
@@ -359,6 +360,7 @@ async function verPanel(cl){
   const slug=slugDe(cl.url);
   let cf=null, estErr=false, info=null; try{ info=await leerSitio(slug); cf=info?info.config:null; }catch(_){ estErr=true; }
   let cu=null, cuErr=null; if(slug){ try{ cu=await leerCuentas(slug); }catch(ex){ cuErr=ex; } }
+  let uso=null; if(slug){ try{ uso=await leerUso(slug); }catch(_){} }
   const estado = slug ? (estErr?'<div class="panel"><h3>Estado del cliente</h3><div class="note">No pude leer el estado de la web ahora. Revisa la URL o inténtalo de nuevo.</div></div>':(estadoPanel(cl,cf)+(info?estadisticasPanel(info):''))) : '';
   return estado+`<div class="panel"><h3>Tema de la web <span class="tag x">Extra · cóbralo</span></h3><p class="d">Cambia el look de temporada de la web de este cliente al instante. Ideal para vender como adicional.</p>
     ${slug?`<div class="temas">${TEMAS.map(([k,n,emo])=>`<button class="tema" data-tema="${esc(slug)}:${esc(k)}"><b>${emo}</b> ${esc(n)}</button>`).join('')}</div><label style="display:block;margin-top:14px;color:var(--mu);font-size:.8rem;font-weight:600">Texto del banner de promo (opcional)<input id="promoTxt" type="text" maxlength="90" placeholder="Ej: 2×1 en inscripción solo diciembre" style="margin-top:5px"></label><button class="tema save" data-savepromo="${esc(slug)}" style="margin-top:10px">💾 Guardar texto de promo</button><p class="d" style="margin-top:6px">Déjalo vacío para usar el texto por defecto de cada temporada.</p><div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px"><h4 style="font-size:.92rem;margin-bottom:4px">Temas que puede usar el cliente <span class="tag x">Cobra por cada uno</span></h4><p class="d">Activa los temas que el cliente pagó. Solo esos le aparecerán en su panel para ponerlos él mismo cuando quiera.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${TEMAS.filter(([k])=>k).map(([k,n,emo])=>{const on=((cf&&cf.temasPermitidos)||[]).includes(k);return `<button class="tema${on?' save':''}" data-togtema="${esc(slug)}:${esc(k)}" style="${on?'border-color:var(--ok);color:var(--ok)':''}">${on?'✅':'➕'} ${emo} ${esc(n)}</button>`;}).join('')}</div></div>`:'<div class="note">Pon la <b>URL de la web</b> del cliente arriba y guarda, para poder aplicar temas.</div>'}</div>
@@ -368,6 +370,7 @@ async function verPanel(cl){
       <label style="display:block;color:var(--mu);font-size:.8rem;font-weight:600;margin-top:10px">Mensaje (opcional)<input id="mantMsg" type="text" maxlength="140" value="${esc((cf&&cf.manto&&cf.manto.msg)||'')}" placeholder="Volvemos en un momento. ¡Gracias por tu paciencia!" style="margin-top:5px"></label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="tema" data-manto="${esc(slug)}:1">🛠️ Activar mantenimiento</button><button class="tema" data-manto="${esc(slug)}:0">✅ Poner la web en vivo</button></div></div>`:''}
     ${slug?cuentasPanel(slug,cu,cuErr):''}
+    ${slug?usoPanel(slug,uso):''}
     <div class="panel"><h3>Versiones y cambios</h3><p class="d">Guarda un punto antes de cada cambio grande para poder volver atrás.</p>
     <form class="form" id="vf" style="margin-bottom:14px"><label class="full">Describe el cambio<input data-k="etq" placeholder="Ej.: Nueva promo de verano"></label><label class="full">Nota (opcional)<input data-k="nota"></label><button class="btn btn-g" data-ver="${cl.id}" type="button" style="width:fit-content">＋ Guardar versión actual</button></form>
     ${vs.map((v,i)=>`<div class="ver ${i===0?'now':''}"><span class="dot"></span><div class="vi"><b>${esc(v.etq)}</b>${i===0?' <span class="tag activo">Actual</span>':''}<br><small>${fecha(v.t)}${v.nota?' · '+esc(v.nota):''}</small></div>${i>0?`<button class="btn btn-g btn-sm" data-rollback="${cl.id}:${v.id}">Volver a esta</button>`:''}</div>`).join('')||'<small style="color:var(--mu)">Sin versiones guardadas.</small>'}</div>
@@ -407,6 +410,31 @@ function cuentasPanel(slug,cu,err){
       <label>Sede<select id="cuS">${sedesOpt}</select></label></div>
     <button class="btn btn-p" data-ucrear="${esc(slug)}" style="margin-top:12px">Crear cuenta con clave temporal</button>
     <p class="d" style="margin-top:8px">La clave se genera sola (segura) y te la muestro para que se la envíes. Si alguien se bloquea por muchos intentos, espera unos minutos o reiníciale la clave.</p></div>`;
+}
+async function leerUso(slug){
+  const {data:st}=await sb.from('sitios').select('id').eq('slug',slug).single(); if(!st) throw new Error('sitio');
+  const act=(await sb.from('actividad').select('quien,que,t').eq('sitio_id',st.id).order('t',{ascending:false}).limit(40)).data||[];
+  let errs=null; try{ const r=await sb.from('errores').select('creado,origen,mensaje,detalle,url,ua').eq('sitio_id',st.id).order('creado',{ascending:false}).limit(300); if(r.error)throw r.error; errs=r.data||[]; }catch(_){ errs=null; }
+  return {sid:st.id,act,errs};
+}
+function usoPanel(slug,uso){
+  if(!uso) return '';
+  const hoy=Date.now(), d7=uso.act.filter(a=>hoy-new Date(a.t)<7*864e5);
+  const porPersona={}; d7.forEach(a=>porPersona[a.quien]=(porPersona[a.quien]||0)+1);
+  const top=Object.entries(porPersona).sort((a,b)=>b[1]-a[1]);
+  const actHtml=`<div class="uso-grid"><div><h4>Quién lo usa (7 días)</h4>${top.map(([q,n])=>`<div class="uso-bar"><span>${esc(q)}</span><b>${n}</b></div>`).join('')||'<small style="color:var(--mu)">Sin uso en los últimos 7 días.</small>'}</div>
+    <div><h4>Últimas acciones</h4><div class="uso-list">${uso.act.slice(0,15).map(a=>`<div><small>${esc(fechaHora(a.t))}</small> <b>${esc(a.quien)}</b> ${esc(a.que)}</div>`).join('')||'<small style="color:var(--mu)">Nada todavía.</small>'}</div></div></div>`;
+  let errHtml;
+  if(uso.errs===null) errHtml='<div class="note">⚙️ Para ver los errores corre <b>10-equipo-y-errores.sql</b> en Supabase (una vez).</div>';
+  else{
+    const g={}; uso.errs.forEach(e=>{ const k=e.origen+'|'+e.mensaje; (g[k]=g[k]||{...e,n:0,ult:e.creado}).n++; });
+    const grupos=Object.values(g).sort((a,b)=>new Date(b.ult)-new Date(a.ult));
+    errHtml=grupos.length?`<div class="uso-list">${grupos.slice(0,20).map(e=>`<details class="err"><summary><span class="tag ${e.origen==='panel'?'soporte':'pend'}">${e.origen==='panel'?'Panel':'Web'}</span> <b>${esc(e.mensaje)}</b> <small>×${e.n} · último ${esc(fechaHora(e.ult))}</small></summary><pre>${esc(e.detalle||'(sin detalle)')}\n\nPágina: ${esc(e.url)}\nNavegador: ${esc(e.ua)}</pre></details>`).join('')}</div>
+      <button class="btn btn-g btn-sm" data-errclear="${uso.sid}" style="margin-top:10px">✓ Marcar todo como revisado (borrar)</button>`
+      :'<div style="color:var(--ok)">✅ Sin errores registrados. Todo funcionando.</div>';
+  }
+  return `<div class="panel"><h3>Uso del panel <span class="tag x">Solo tú</span></h3><p class="d">Cómo usa el equipo su panel. Tus entradas como gestor no quedan registradas.</p>${actHtml}</div>
+    <div class="panel"><h3>Errores de la web y del panel <span class="tag x">Solo tú</span></h3><p class="d">Se registran solos cuando algo falla en el navegador de un visitante o del equipo. Úsalos para mejorar el sistema.</p>${errHtml}</div>`;
 }
 async function cargarBackups(){
   const {data,error}=await sb.from('backups').select('creado').order('creado',{ascending:false}); if(error)throw error;
@@ -487,6 +515,7 @@ document.addEventListener('click', async e=>{
     if(d.tema!==undefined){ const i=d.tema.indexOf(':'), slug=d.tema.slice(0,i), tema=d.tema.slice(i+1); el.disabled=true; try{ await aplicarTema(slug,tema); touch(`Aplicó el tema «${tema||'normal'}» a ${slug}`); toast('Tema aplicado ✓ La web cambia al recargar.'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
     if(d.savepromo!==undefined){ const promo=($('#promoTxt')?.value||'').trim(); el.disabled=true; try{ await guardarPromo(d.savepromo,promo); touch(`Editó el texto de promo de ${d.savepromo}`); toast(promo?'Texto guardado ✓ La web lo muestra al recargar.':'Listo ✓ Usará el texto por defecto.'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
     if(d.togtema!==undefined){ const j=d.togtema.indexOf(':'), slug=d.togtema.slice(0,j), tema=d.togtema.slice(j+1); el.disabled=true; try{ const on=await toggleTemaPermitido(slug,tema); touch(`${on?'Activó':'Quitó'} el tema «${tema}» para ${slug}`); toast(on?'Tema activado ✓ Ya le aparece al cliente en su panel.':'Tema quitado.'); if(editing)go('clientes'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
+    if(d.errclear){ if(!confirm('¿Borrar los errores registrados de este cliente?'))return; el.disabled=true; try{ const {error}=await sb.from('errores').delete().eq('sitio_id',d.errclear); if(error)throw error; toast('Errores marcados como revisados ✓'); return go('clientes'); }catch(ex){ toast(ex.message); } el.disabled=false; return; }
     if(d.ucopy!==undefined){ try{ await navigator.clipboard.writeText(d.ucopy); toast('Copiado ✓'); }catch(_){ toast('No se pudo copiar, cópialo manualmente'); } return; }
     if(d.ucrear){ const slug=d.ucrear, nombre=$('#cuN').value.trim(), email=$('#cuE').value.trim().toLowerCase(), rol=$('#cuR').value, sedeV=$('#cuS').value;
       if(!nombre||!email) return toast('Pon nombre y correo'); const pass=claveTemporal(); el.disabled=true;
