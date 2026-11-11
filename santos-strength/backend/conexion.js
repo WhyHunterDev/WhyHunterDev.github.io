@@ -16,7 +16,9 @@
   };
   if (!window.supabase || CONFIG.url.includes('TU-PROYECTO')) return; // sin configurar → demo local
 
-  const sb = window.supabase.createClient(CONFIG.url, CONFIG.anonKey);
+  // El Gestor guarda su sesión aparte: así entrar al panel del cliente en el mismo navegador no lo cambia de cuenta.
+  const GESTOR_PAG = /panel-maestro|\/gestor\//i.test(location.pathname);
+  const sb = window.supabase.createClient(CONFIG.url, CONFIG.anonKey, GESTOR_PAG ? { auth: { storageKey: 'wh-gestor-auth' } } : undefined);
   let sitioId = null;
   const idDe = async () => sitioId || (sitioId = (await sb.from('sitios').select('id').eq('slug', CONFIG.sitio).single()).data?.id);
 
