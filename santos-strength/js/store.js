@@ -147,7 +147,21 @@
   async function checkPass(u, pass) { return !!u.hash && (await hashPass(pass, u.salt)) === u.hash; }
   const passOK = (p) => p.length >= 8 && /[A-Za-z]/.test(p) && /\d/.test(p);
 
+  // Claves de contenido que viven en la nube (tabla 'contenido').
+  const CLAVES = ['config', 'sedes', 'planes', 'pase', 'notaPlanes', 'entrenadores', 'cafetin', 'publicaciones', 'galeria'];
+  const B = () => window.SS_BACKEND;
+
   async function load() {
+    if (B()) {
+      try {
+        const base = seed(), nube = await B().cargar();      // trae lo que ya hay en la nube
+        for (const k of CLAVES) {                            // primera vez: siembra lo que falte
+          if (nube[k] === undefined) { await B().guardarClave(k, base[k]); nube[k] = base[k]; }
+        }
+        nube.version = VERSION;
+        return nube;
+      } catch (e) { console.warn('Backend no disponible, uso modo local:', e); }
+    }
     let data = await get('data');
     if (!data || data.version !== VERSION) {
       data = seed();
@@ -155,7 +169,13 @@
     }
     return data;
   }
-  async function save(data) { await set('data', data); try { localStorage.setItem('ss-ping', Date.now()); } catch (e) {} }
+  async function save(data) {
+    if (B()) {
+      try { await Promise.all(CLAVES.map((k) => data[k] !== undefined && B().guardarClave(k, data[k]))); return; }
+      catch (e) { console.warn('No se pudo guardar en la nube:', e); }
+    }
+    await set('data', data); try { localStorage.setItem('ss-ping', Date.now()); } catch (e) {}
+  }
   async function reset() { await set('data', null); return load(); }
 
   function vigente(p) { const t = today(); return p.estado === 'publicado' && (!p.inicio || p.inicio <= t) && (!p.fin || p.fin >= t); }
