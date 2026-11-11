@@ -3,8 +3,11 @@
   const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const U = (r) => SS.mediaUrl(r);
+  const B = () => window.SS_BACKEND;                 // nube (Supabase) si está configurada
   let data = await SS.load(), me = null, view = 'resumen', editing = null, gpage = 1;
+  data.actividad = data.actividad || [];
   const IDLE_MIN = 15, MAX_TRY = 5, LOCK_MIN = 5;
+  const rolLabel = { admin: 'Administrador', recepcion: 'Recepción', cafetin: 'Cafetín', gestor: 'Gestor' };
 
   // ---------- Utilidades ----------
   const toast = (m) => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); };
@@ -46,7 +49,14 @@
     const video = file.type.startsWith('video');
     if (!video && !file.type.startsWith('image')) throw new Error('Solo fotos o videos');
     if (file.size > (video ? 80 : 15) * 1048576) throw new Error(video ? 'Video muy pesado (máx. 80 MB)' : 'Foto muy pesada (máx. 15 MB)');
-    const id = SS.uid(), blob = video ? file : await compress(file);
+    const blob = video ? file : await compress(file);
+    if (B()) {                                        // nube: sube al almacenamiento de Supabase
+      const ref = await B().subir(new File([blob], file.name || 'foto.jpg', { type: video ? file.type : 'image/jpeg' }));
+      mt[ref] = video ? 'video' : 'image';
+      if (video) { const p = await frame(file); if (p) posters[ref] = await B().subir(new File([p], 'poster.jpg', { type: 'image/jpeg' })); }
+      return ref;
+    }
+    const id = SS.uid();
     await SS.putMedia(id, blob);
     const ref = 'idb:' + id; mt[ref] = video ? 'video' : 'image';
     if (video) { const p = await frame(file); if (p) { const pid = SS.uid(); await SS.putMedia(pid, p); posters[ref] = 'idb:' + pid; } }
@@ -104,12 +114,26 @@
   // ---------- Sesión y seguridad ----------
   const lockGet = () => { try { return JSON.parse(localStorage.getItem('ss-lock') || '{}'); } catch (_) { return {}; } };
   const lockSet = (o) => { try { localStorage.setItem('ss-lock', JSON.stringify(o)); } catch (_) {} };
+  const asMe = (perfil, email) => ({ id: perfil.id, nombre: perfil.nombre || 'Usuario', email, rol: perfil.rol === 'gestor' ? 'admin' : perfil.rol, sede: perfil.sede || 'todas', gestor: perfil.rol === 'gestor', debeCambiar: false });
   $('#loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const em = $('#em').value.trim().toLowerCase(), pw = $('#pw').value, err = $('#err'), L = lockGet(), l = L[em] || { n: 0, until: 0 };
+    const em = $('#em').value.trim().toLowerCase(), pw = $('#pw').value, err = $('#err');
     const fail = (m) => { err.textContent = m; err.hidden = false; };
-    if (l.until > Date.now()) return fail(`Demasiados intentos. Intenta en ${Math.ceil((l.until - Date.now()) / 60000)} min.`);
     $('#lbtn').disabled = true;
+    if (B()) {                                        // nube: login con Supabase Auth
+      try {
+        const perfil = await B().auth.entrar(em, pw);
+        if (!perfil || !perfil.activo) throw new Error('Tu cuenta no tiene acceso o está desactivada.');
+        me = asMe(perfil, em); data = await SS.load(); data.actividad = data.actividad || [];
+        $('#pw').value = ''; err.hidden = true; start();
+      } catch (ex) {
+        const m = (ex.message || '').toLowerCase();
+        fail(m.includes('invalid login') ? 'Correo o contraseña incorrectos.' : m.includes('rate') ? 'Demasiados intentos. Espera un momento.' : (ex.message || 'No se pudo entrar.'));
+      }
+      $('#lbtn').disabled = false; return;
+    }
+    const L = lockGet(), l = L[em] || { n: 0, until: 0 };
+    if (l.until > Date.now()) { $('#lbtn').disabled = false; return fail(`Demasiados intentos. Intenta en ${Math.ceil((l.until - Date.now()) / 60000)} min.`); }
     data = await SS.load();
     const u = data.usuarios.find((x) => x.email.toLowerCase() === em);
     const ok = u && (await SS.checkPass(u, pw));
@@ -121,7 +145,16 @@
     me = u; sessionStorage.setItem('ss-ses', JSON.stringify({ id: u.id, t: Date.now() }));
     $('#pw').value = ''; err.hidden = true; start();
   });
-  function logout(msg) { sessionStorage.removeItem('ss-ses'); me = null; $('#app').style.display = 'none'; $('#login').style.display = ''; if (msg) { $('#err').textContent = msg; $('#err').hidden = false; } }
+  async function logout(msg) { if (B()) { try { await B().auth.salir(); } catch (_) {} } sessionStorage.removeItem('ss-ses'); me = null; $('#app').style.display = 'none'; $('#login').style.display = ''; if (msg) { $('#err').textContent = msg; $('#err').hidden = false; } }
+  // Recuperación de contraseña por correo (solo en modo nube).
+  const forgotBtn = $('#forgotLink');
+  if (forgotBtn) { if (!B()) forgotBtn.hidden = true; else forgotBtn.addEventListener('click', async () => {
+    const em = $('#em').value.trim(), err = $('#err'), okm = $('#okm'); err.hidden = true; okm.hidden = true;
+    if (!em) { err.textContent = 'Escribe tu correo arriba y vuelve a tocar el enlace.'; err.hidden = false; return; }
+    try { const { error } = await B().sb.auth.resetPasswordForEmail(em, { redirectTo: location.href.split('#')[0] }); if (error) throw error; okm.textContent = 'Te enviamos un correo para crear una nueva contraseña (revisa spam).'; okm.hidden = false; }
+    catch (ex) { err.textContent = ex.message || 'No se pudo enviar.'; err.hidden = false; }
+  }); }
+  if (B()) B().sb.auth.onAuthStateChange((ev) => { if (ev === 'PASSWORD_RECOVERY') { (async () => { try { const p = await B().auth.actual(); if (p) { const { data: au } = await B().sb.auth.getUser(); me = asMe(p, au.user?.email || ''); data = await SS.load(); data.actividad = data.actividad || []; start(); go('cuenta'); toast('Crea tu nueva contraseña'); } } catch (_) {} })(); } });
   let idleT; const bump = () => { try { sessionStorage.setItem('ss-ses', JSON.stringify({ id: me.id, t: Date.now() })); } catch (_) {} clearTimeout(idleT); idleT = setTimeout(() => logout('Sesión cerrada por inactividad.'), IDLE_MIN * 60000); };
   ['click', 'keydown', 'scroll', 'touchstart'].forEach((ev) => addEventListener(ev, () => me && bump(), { passive: true }));
 
@@ -140,7 +173,7 @@
     $('#side').innerHTML = `<div class="brand disp"><img src="img/logo.png" alt=""><span>Santos <b>Panel</b></span></div>` +
       NAV.map(([g, it]) => { const v = it.filter((i) => can(i[3])); return v.length ? `<div class="grp">${g}</div>` + v.map(([id, ic, n]) => `<button class="nv ${id === view ? 'on' : ''}" data-v="${id}">${ic} ${n}${id === 'resumen' && pend ? `<span class="ct">${pend}</span>` : ''}</button>`).join('') : ''; }).join('') +
       `<a class="nv" href="index.html" target="_blank" rel="noopener">🌐 Ver página web</a>
-      <div class="me"><b>${esc(me.nombre)}</b><small>${esc({ admin: 'Administrador', recepcion: 'Recepción', cafetin: 'Cafetín' }[me.rol])} · ${esc(sedeName(me.sede))}</small><button class="btn btn-g btn-sm" data-logout style="margin-top:10px;width:100%">Cerrar sesión</button></div>`;
+      <div class="me"><b>${esc(me.nombre)}</b><small>${esc(me.gestor ? 'Gestor (agencia)' : rolLabel[me.rol])} · ${esc(sedeName(me.sede))}</small><button class="btn btn-g btn-sm" data-logout style="margin-top:10px;width:100%">Cerrar sesión</button></div>`;
   }
   async function go(v) {
     if (me.debeCambiar) v = 'cuenta';
@@ -253,15 +286,18 @@
     (await Promise.all(data.planes.map(async (p, i) => `<div class="panel"><h3>${esc(p.nombre)}</h3>${await form(p, [['nombre', 'Nombre', 'text'], ['meses', 'Meses', 'num'], ['precio', 'Precio normal (S/)', 'num'], ['destacado', 'Recomendado', 'bool'], ['precioEvento', 'Precio evento (S/)', 'num'], ['eventoTexto', 'Nombre del evento', 'text', { hint: 'Ej.: Black Friday' }], ['eventoHasta', 'Evento hasta', 'date']], 'pl' + i)}<div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-y" data-saveplan="${i}">Guardar</button><button class="btn btn-bad btn-sm" data-delplan="${i}" style="margin-left:auto">Eliminar plan</button></div></div>`))).join('') +
     `<button class="btn btn-g" data-addplan style="margin-bottom:16px">＋ Agregar plan</button><div class="panel"><h3>Pase diario y nota</h3>${await form(data, [['pase.socio', 'Pase diario socio (S/)', 'num'], ['pase.noSocio', 'Pase diario no socio (S/)', 'num'], ['notaPlanes', 'Nota bajo los planes', 'text', { full: 1 }]], 'pp')}<button class="btn btn-y" data-savecfg="pp:root" style="margin-top:14px">Guardar</button></div>`;
   V.usuarios = async () => {
-    $('#topActs').innerHTML = '<button class="btn btn-y" data-newuser>＋ Nuevo usuario</button>';
-    return title('Usuarios', 'Crea cuentas para recepción y cafetín. Cada persona entra con su propio correo.') +
-      `<div id="nu"></div><div class="panel tbl"><table><tr><th>Nombre</th><th>Rol</th><th>Sede</th><th>Estado</th><th></th></tr>${data.usuarios.map((u) => `<tr><td><b>${esc(u.nombre)}</b><br><small style="color:var(--mu)">${esc(u.email)}</small></td><td><span class="role ${u.rol}">${{ admin: 'Admin', recepcion: 'Recepción', cafetin: 'Cafetín' }[u.rol]}</span></td><td>${esc(sedeName(u.sede))}</td><td>${u.activo ? '<span class="st publicado">Activo</span>' : '<span class="st bloqueado">Bloqueado</span>'}${u.debeCambiar ? '<br><small style="color:var(--mu)">Clave temporal</small>' : ''}</td>
-        <td style="white-space:nowrap">${u.id === me.id ? '<small style="color:var(--mu)">Tú</small>' : `<button class="btn btn-g btn-sm" data-ureset="${u.id}">Nueva clave</button> <button class="btn btn-g btn-sm" data-utog="${u.id}">${u.activo ? 'Bloquear' : 'Activar'}</button> <button class="btn btn-bad btn-sm" data-udel="${u.id}">✕</button>`}</td></tr>`).join('')}</table></div>`;
+    const cloud = !!B();
+    if (!cloud) $('#topActs').innerHTML = '<button class="btn btn-y" data-newuser>＋ Nuevo usuario</button>';
+    return title('Usuarios', 'Las cuentas del equipo para entrar a este panel.') +
+      (cloud ? '<div class="info">👥 Las cuentas se administran en <b>Supabase → Authentication</b>. Crea el usuario ahí, y luego dale su rol en la tabla <b>perfiles</b>. Pronto lo integro aquí mismo.</div>' : '') +
+      `<div id="nu"></div><div class="panel tbl"><table><tr><th>Nombre</th><th>Rol</th><th>Sede</th><th>Estado</th>${cloud ? '' : '<th></th>'}</tr>${(data.usuarios || []).map((u) => `<tr><td><b>${esc(u.nombre)}</b>${u.email ? `<br><small style="color:var(--mu)">${esc(u.email)}</small>` : ''}</td><td><span class="role ${u.rol}">${esc(rolLabel[u.rol] || u.rol)}</span></td><td>${esc(sedeName(u.sede))}</td><td>${u.activo ? '<span class="st publicado">Activo</span>' : '<span class="st bloqueado">Bloqueado</span>'}${u.debeCambiar ? '<br><small style="color:var(--mu)">Clave temporal</small>' : ''}</td>
+        ${cloud ? '' : `<td style="white-space:nowrap">${u.id === me.id ? '<small style="color:var(--mu)">Tú</small>' : `<button class="btn btn-g btn-sm" data-ureset="${u.id}">Nueva clave</button> <button class="btn btn-g btn-sm" data-utog="${u.id}">${u.activo ? 'Bloquear' : 'Activar'}</button> <button class="btn btn-bad btn-sm" data-udel="${u.id}">✕</button>`}</td>`}</tr>`).join('')}</table></div>`;
   };
   V.actividad = async () => title('Actividad', 'Quién hizo qué y cuándo.') + `<div class="panel tbl"><table><tr><th>Fecha</th><th>Usuario</th><th>Acción</th></tr>${data.actividad.slice(0, 100).map((a) => `<tr><td style="white-space:nowrap">${new Date(a.t).toLocaleString('es-PE')}</td><td>${esc(a.quien)}</td><td>${esc(a.que)}</td></tr>`).join('')}</table></div>`;
   V.cuenta = async () => title('Mi cuenta') + `${me.debeCambiar ? '<div class="info">🔐 Por seguridad, crea tu propia contraseña antes de continuar.</div>' : ''}
     <div class="panel" style="max-width:520px"><h3>Cambiar contraseña</h3><p class="d">Mínimo 8 caracteres, con letras y números. No la compartas con nadie.</p>
-    <form class="form" id="pwf" style="grid-template-columns:1fr"><label>Contraseña actual<input type="password" id="p0" autocomplete="current-password" required></label><label>Nueva contraseña<input type="password" id="p1" autocomplete="new-password" required></label><label>Repite la nueva<input type="password" id="p2" autocomplete="new-password" required></label><button class="btn btn-y">Guardar contraseña</button></form></div>`;
+    <form class="form" id="pwf" style="grid-template-columns:1fr">${B() ? '' : '<label>Contraseña actual<input type="password" id="p0" autocomplete="current-password" required></label>'}<label>Nueva contraseña<input type="password" id="p1" autocomplete="new-password" required></label><label>Repite la nueva<input type="password" id="p2" autocomplete="new-password" required></label><button class="btn btn-y">Guardar contraseña</button></form></div>
+    ${B() ? `<div class="panel" style="max-width:520px"><h3>Acceso</h3><p class="d">Tu acceso es <b>${esc(me.email)}</b>. Si olvidas tu contraseña, usa «¿Olvidaste tu contraseña?» en la pantalla de inicio.</p></div>` : ''}`;
   V.guia = async () => {
     const G = {
       admin: [['Entra siempre por tu enlace privado', 'No está en la web pública. Guárdalo en favoritos y no lo compartas.'], ['Crea las cuentas del equipo', 'Usuarios → Nuevo usuario. El sistema da una clave temporal; la persona crea la suya al entrar.'], ['Edita la portada', 'Contenido de inicio: textos, barra animada, visión, números, encabezado de videos y redes.'], ['Precios y eventos', 'Planes y precios: para Black Friday u otro evento, pon el precio y la fecha final. Vuelve solo al precio normal.'], ['Sedes', 'Agrega o elimina sedes. Cada una con su WhatsApp, horario, foto y video de cómo llegar.'], ['Coaches', 'Cada coach tiene su página: foto, más fotos, presentación, logros y video.'], ['Control', 'Si alguien deja el trabajo: Usuarios → Bloquear. En Actividad ves todo lo que se cambió.']],
@@ -275,10 +311,13 @@
   // ---------- Acciones ----------
   document.addEventListener('submit', async (e) => {
     if (e.target.id !== 'pwf') return; e.preventDefault();
-    const [a, b, c] = ['#p0', '#p1', '#p2'].map((s) => $(s).value);
-    if (!(await SS.checkPass(me, a))) return toast('La contraseña actual no es correcta');
+    const b = $('#p1').value, c = $('#p2').value;
     if (b !== c) return toast('Las contraseñas nuevas no coinciden');
-    if (!SS.passOK(b) || b === a) return toast('Usa 8+ caracteres con letras y números, distinta a la actual');
+    if (!SS.passOK(b)) return toast('Usa 8+ caracteres con letras y números');
+    if (B()) { try { await B().auth.cambiarPass(b); toast('Contraseña actualizada ✓'); return go('resumen'); } catch (ex) { return toast(ex.message || 'No se pudo cambiar'); } }
+    const a = $('#p0').value;
+    if (!(await SS.checkPass(me, a))) return toast('La contraseña actual no es correcta');
+    if (b === a) return toast('La nueva debe ser distinta a la actual');
     await SS.setPass(me, b); me.debeCambiar = false;
     await commit('Contraseña actualizada ✓', 'cambió su contraseña'); go('resumen');
   });
@@ -334,10 +373,17 @@
     } catch (er) { toast(er.message || 'Ocurrió un error'); }
   });
 
-  // Recupera la sesión si la pestaña sigue abierta (se borra al cerrar el navegador)
-  try {
-    const s = JSON.parse(sessionStorage.getItem('ss-ses') || 'null');
-    if (s && Date.now() - s.t < IDLE_MIN * 60000) { const u = data.usuarios.find((x) => x.id === s.id && x.activo); if (u) { me = u; start(); } }
-  } catch (_) {}
-  addEventListener('storage', async (e) => { if (e.key === 'ss-ping' && me && !editing) { data = await SS.load(); me = data.usuarios.find((u) => u.id === me.id); if (!me || !me.activo) return logout('Tu cuenta fue desactivada.'); } });
+  // Recupera la sesión si sigue activa.
+  if (B()) {
+    try {
+      const perfil = await B().auth.actual();
+      if (perfil && perfil.activo) { const { data: au } = await B().sb.auth.getUser(); me = asMe(perfil, au.user?.email || ''); data = await SS.load(); data.actividad = data.actividad || []; start(); }
+    } catch (_) {}
+  } else {
+    try {
+      const s = JSON.parse(sessionStorage.getItem('ss-ses') || 'null');
+      if (s && Date.now() - s.t < IDLE_MIN * 60000) { const u = data.usuarios.find((x) => x.id === s.id && x.activo); if (u) { me = u; start(); } }
+    } catch (_) {}
+    addEventListener('storage', async (e) => { if (e.key === 'ss-ping' && me && !editing) { data = await SS.load(); me = data.usuarios.find((u) => u.id === me.id); if (!me || !me.activo) return logout('Tu cuenta fue desactivada.'); } });
+  }
 })();

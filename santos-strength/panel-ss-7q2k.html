@@ -120,8 +120,10 @@ th{color:var(--mu);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase}
     <label>Correo<input id="em" type="email" required autocomplete="username"></label>
     <label>Contraseña<input id="pw" type="password" required autocomplete="current-password"></label>
     <p class="err" id="err" hidden></p>
+    <p class="ok" id="okm" hidden style="color:var(--ok);font-size:.84rem"></p>
     <button class="btn btn-y" type="submit" id="lbtn">Ingresar</button>
-    <p class="lock">🔒 Contraseñas cifradas · bloqueo tras 5 intentos · cierre automático por inactividad</p>
+    <button type="button" id="forgotLink" style="background:none;color:var(--y);font-size:.82rem">¿Olvidaste tu contraseña?</button>
+    <p class="lock">🔒 Contraseñas cifradas · cierre automático por inactividad</p>
   </form>
 </section>
 
@@ -133,6 +135,8 @@ th{color:var(--mu);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase}
   </main>
 </div>
 <div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="backend/conexion.js"></script>
 <script src="js/store.js"></script>
 <script src="js/panel.js"></script>
 </body>
