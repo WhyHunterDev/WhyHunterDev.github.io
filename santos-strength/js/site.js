@@ -19,6 +19,18 @@
   const sedeName = (id) => id === 'todas' ? 'Todas las sedes' : (sedeObj(id) || {}).nombre || '';
   const enSede = (x) => sede === 'todas' || !x.sede || x.sede === 'todas' || x.sede === sede || (Array.isArray(x.sedes) && x.sedes.includes(sede));
   const waSede = () => sedeObj(sede) || data.sedes[0] || { whatsapp: '' };
+  // ---------- Cafetín: número propio + horario de pedidos ----------
+  const toHora = (t) => { const [a, b] = String(t || '').split(':').map(Number); return (a || 0) + (b || 0) / 60; };
+  const cafeAbierto = () => {
+    const p = (data.cafetin && data.cafetin.pedidos) || {};
+    if (!p.activo) return true;
+    const n = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }));
+    if (n.getDay() === 0 && !p.dom) return false;      // domingo cerrado salvo que lo activen
+    const h = n.getHours() + n.getMinutes() / 60;
+    return h >= toHora(p.desde) && h < toHora(p.hasta);
+  };
+  const cafeWa = (s) => { const w = String((data.cafetin && data.cafetin.whatsapp) || '').replace(/\D/g, ''); return w || (s && s.whatsapp) || ''; };
+  const cafeHorarioTxt = () => { const p = (data.cafetin && data.cafetin.pedidos) || {}; return `${esc(p.diasTxt || 'Lun a Sáb')}${p.dom ? ' y domingos' : ''} · ${esc(p.desde || '')}–${esc(p.hasta || '')}`; };
   function setSede(id) { sede = id; try { localStorage.setItem('ss-sede', id); } catch (_) {} chrome(); render(true); }
 
   // ---------- Elementos fijos ----------
@@ -218,7 +230,7 @@
     const vis = items.filter((i) => cat === 'Todo' || i.categoria === cat).sort((a, b) => (b.disponible - a.disponible) || (b.destacado - a.destacado));
     return `<section class="sec" style="padding-top:0"><div class="wrap">
       <div class="cafe-hero"><img src="${esc(await U(cf.imagen))}" alt="">
-        <div><span class="eyebrow">Cafetín fit · ${esc(sede === 'todas' ? 'todas las sedes' : 'sede ' + sedeName(sede))}</span><h1 class="h1">${esc(cf.titulo)} <em>${esc(cf.acento)}</em></h1><p class="lead" style="color:#ddd">${esc(cf.texto)}</p></div></div>
+        <div><span class="eyebrow">Cafetín fit · ${esc(sede === 'todas' ? 'todas las sedes' : 'sede ' + sedeName(sede))}</span><h1 class="h1">${esc(cf.titulo)} <em>${esc(cf.acento)}</em></h1><p class="lead" style="color:#ddd">${esc(cf.texto)}</p>${(cf.pedidos && cf.pedidos.activo) ? `<div class="cafe-status ${cafeAbierto() ? 'ab' : 'ce'}">${cafeAbierto() ? '🟢 Pedidos abiertos ahora' : '🔴 Pedidos cerrados ahora'} · ${cafeHorarioTxt()}</div>` : ''}</div></div>
       ${sedeChips()}
       ${combos.length ? `<h2 class="h2" style="font-size:2rem;margin-top:2.6rem">Combos <em>del momento</em></h2><div class="combos">${(await Promise.all(combos.map(async (c) => `<div class="combo rv"><div class="ci">${c.foto ? `<img src="${esc(await U(c.foto))}" alt="" loading="lazy">` : ''}</div><div><small>Combo${c.hasta ? ' · hasta ' + fmt(c.hasta) : ''}</small><h4>${esc(c.nombre)}</h4><p>${esc(c.incluye)}</p></div><div class="cp">${c.precioAntes ? `<s>${soles(c.precioAntes)}</s>` : ''}<b>${soles(c.precio)}</b></div></div>`))).join('')}</div>` : ''}
       <div class="row-hd" style="margin-top:2.6rem"><h2 class="h2" style="font-size:2rem;margin:0">Nuestro <em>menú</em></h2><div class="chips">${cats.map((c) => `<button class="chip ${c === cat ? 'on' : ''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('')}</div></div>
@@ -234,7 +246,7 @@
       <span class="eyebrow">${esc(i.categoria)}</span><h3>${esc(i.nombre)}</h3><p style="color:#cfcabf">${esc(i.descripcion)}</p>
       <div class="mac">${i.proteina ? `<span class="p">${i.proteina} g proteína</span>` : ''}${i.kcal ? `<span>${i.kcal} kcal</span>` : ''}</div>
       <div class="big">${soles(i.precio)}</div><small style="color:var(--mu)">Disponible en: ${i.sedes.map(sedeName).join(', ')}</small>
-      ${i.disponible ? `<a class="btn btn-wa" target="_blank" rel="noopener" href="${SS.waLink(s.whatsapp, `Hola 👋 ¿Me separan un ${i.nombre} en la sede ${s.nombre}?`)}">${WA}Separar por WhatsApp</a>` : '<span class="tag x">Agotado por hoy</span>'}
+      ${i.disponible ? (cafeAbierto() ? `<a class="btn btn-wa" target="_blank" rel="noopener" href="${SS.waLink(cafeWa(s), `Hola 👋 Quiero pedir un ${i.nombre} en la sede ${s.nombre}. ¿Está disponible?`)}">${WA}Pedir por WhatsApp</a>` : `<div class="cafe-cerrado">🕒 <b>Pedidos cerrados ahora</b><span>Atención del cafetín: ${cafeHorarioTxt()}</span></div>`) : '<span class="tag x">Agotado por hoy</span>'}
     </div><button class="xbtn" data-mclose aria-label="Cerrar">×</button></div>`;
     $('#modal').classList.add('on');
   }

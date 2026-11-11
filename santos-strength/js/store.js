@@ -87,6 +87,7 @@
       ],
       cafetin: {
         titulo: 'Come como', acento: 'entrenas', texto: 'Batidos, platos y snacks con su proteína y calorías a la vista. Pide antes o después de entrenar.', imagen: 'img/cafe/hero.jpg',
+        whatsapp: '', pedidos: { activo: true, desde: '08:00', hasta: '20:00', diasTxt: 'Lunes a sábado', dom: false },
         items: [
           { id: 'i1', nombre: 'Batido Whey Chocolate', categoria: 'Batidos', descripcion: 'Proteína whey, leche descremada, plátano y cacao.', precio: 12, proteina: 30, kcal: 320, objetivo: 'volumen', sedes: ['manchay', 'vmt'], disponible: true, destacado: true, foto: 'img/cafe/1.jpg' },
           { id: 'i2', nombre: 'Batido Verde Detox', categoria: 'Batidos', descripcion: 'Espinaca, piña, manzana verde, chía y proteína vegetal.', precio: 10, proteina: 18, kcal: 190, objetivo: 'definicion', sedes: ['manchay', 'vmt'], disponible: true, destacado: false, foto: 'img/cafe/2.jpg' },
