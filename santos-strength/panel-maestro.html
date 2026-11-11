@@ -266,24 +266,45 @@ let flt='todos';
 V.clientes=async ()=>{
   H('Clientes','Cada web que creas, con su costo, soporte y versiones. Guardado en la nube.');
   $('#acts').innerHTML=`<button class="btn btn-p" data-new>＋ Nuevo cliente</button>`;
-  if(editing)return clForm();
+  if(editing)return await clForm();
   const f=clientes.filter(c=>flt==='todos'||c.estado===flt);
   return `<div class="chips">${[['todos','Todos'],...estados].map(([k,n])=>`<button class="chip ${k===flt?'on':''}" data-flt="${k}">${n}</button>`).join('')}</div>
     <div class="clients">${f.map(clCard).join('')||'<div class="empty">Nada por aquí.</div>'}</div>`;
 };
-function clForm(){
+async function clForm(){
   const n=editing==='new', cl=n?{negocio:'',rubro:'',estado:'activo',contacto:'',telefono:'',url:'',panel:'',costo:'',soporte:'',pago:'pendiente',ciclo:'mensual',entregado:new Date().toISOString().slice(0,10),notas:'',versiones:[]}:structuredClone(clientes.find(c=>c.id===editing));
   const F=[['negocio','Negocio / empresa','text',1],['rubro','Rubro','text'],['estado','Estado','sel',0,estados],['pago','Pago','sel',0,[['pendiente','Por cobrar'],['pagado','Pagado']]],['contacto','Contacto','text'],['telefono','Teléfono / WhatsApp','text'],['url','URL de la web','url'],['panel','URL del panel','url'],['costo','Costo cobrado (S/)','num'],['soporte','Soporte (S/)','num'],['ciclo','Ciclo de soporte','sel',0,[['mensual','Mensual'],['anual','Anual'],['unico','Pago único'],['ninguno','Sin soporte']]],['entregado','Fecha de entrega','date']];
   const fld=([k,l,t,full,opts])=>t==='sel'?`<label class="${full?'full':''}">${l}<select data-k="${k}">${opts.map(([a,b])=>`<option value="${a}" ${a===cl[k]?'selected':''}>${b}</option>`).join('')}</select></label>`:`<label class="${full?'full':''}">${l}<input type="${t==='num'?'number':t}" ${t==='num'?'step="any" min="0"':''} data-k="${k}" value="${esc(cl[k])}"></label>`;
   return`<a class="back" data-cancel>← Volver</a><div class="panel"><h3>${n?'Nuevo cliente':'Editar '+esc(cl.negocio)}</h3>
     <form class="form" id="cf">${F.map(fld).join('')}<label class="full">Notas<textarea data-k="notas" rows="3">${esc(cl.notas)}</textarea></label></form>
     <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn btn-p" data-save>Guardar</button><a class="btn btn-g" data-cancel>Cancelar</a>${!n?`<button class="btn btn-bad" data-del="${cl.id}" style="margin-left:auto">Eliminar</button>`:''}</div></div>
-    ${!n?verPanel(cl):''}`;
+    ${!n?await verPanel(cl):''}`;
 }
-function verPanel(cl){
+const TEMA_NOM={'':'Normal','navidad':'🎄 Navidad','halloween':'🎃 Halloween','anionuevo':'🎆 Año Nuevo','fiestaspatrias':'🇵🇪 Fiestas Patrias','sanvalentin':'❤️ San Valentín'};
+async function leerConfig(slug){
+  if(!slug)return null;
+  const {data:s,error:e1}=await sb.from('sitios').select('id').eq('slug',slug).maybeSingle(); if(e1)throw e1;
+  if(!s)return null;
+  const {data:c}=await sb.from('contenido').select('valor').eq('sitio_id',s.id).eq('clave','config').maybeSingle();
+  return (c&&c.valor)||{};
+}
+function estadoPanel(cl,cf){
+  const pago=cl.pago==='pagado'?'<b style="color:var(--ok)">✅ Pagado</b>':'<b style="color:var(--warn)">🟠 Por cobrar</b>';
+  const tema=cf?(TEMA_NOM[cf.tema||'']||cf.tema):'<span style="color:var(--mu)">—</span>';
+  const extra=cf&&cf.temaExtra?'<b style="color:var(--ok)">✅ Activa</b>':'<span style="color:var(--mu)">— Desactivada</span>';
+  const box='background:#0e0e12;border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:150px;flex:1';
+  return`<div class="panel"><h3>Estado del cliente</h3><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+    <div style="${box}"><small style="color:var(--mu)">Pago</small><div style="margin-top:3px">${pago}</div></div>
+    <div style="${box}"><small style="color:var(--mu)">Tema activo</small><div style="margin-top:3px"><b>${tema}</b></div></div>
+    <div style="${box}"><small style="color:var(--mu)">Edición de temas (extra)</small><div style="margin-top:3px">${extra}</div></div>
+  </div></div>`;
+}
+async function verPanel(cl){
   const vs=[...(cl.versiones||[])].sort((a,b)=>b.t-a.t);
   const slug=slugDe(cl.url);
-  return`<div class="panel"><h3>Tema de la web <span class="tag x">Extra · cóbralo</span></h3><p class="d">Cambia el look de temporada de la web de este cliente al instante. Ideal para vender como adicional.</p>
+  let cf=null, estErr=false; try{ cf=await leerConfig(slug); }catch(_){ estErr=true; }
+  const estado = slug ? (estErr?'<div class="panel"><h3>Estado del cliente</h3><div class="note">No pude leer el estado de la web ahora. Revisa la URL o inténtalo de nuevo.</div></div>':estadoPanel(cl,cf)) : '';
+  return estado+`<div class="panel"><h3>Tema de la web <span class="tag x">Extra · cóbralo</span></h3><p class="d">Cambia el look de temporada de la web de este cliente al instante. Ideal para vender como adicional.</p>
     ${slug?`<div class="temas">${TEMAS.map(([k,n,emo])=>`<button class="tema" data-tema="${esc(slug)}:${esc(k)}"><b>${emo}</b> ${esc(n)}</button>`).join('')}</div><label style="display:block;margin-top:14px;color:var(--mu);font-size:.8rem;font-weight:600">Texto del banner de promo (opcional)<input id="promoTxt" type="text" maxlength="90" placeholder="Ej: 2×1 en inscripción solo diciembre" style="margin-top:5px"></label><button class="tema save" data-savepromo="${esc(slug)}" style="margin-top:10px">💾 Guardar texto de promo</button><p class="d" style="margin-top:6px">Déjalo vacío para usar el texto por defecto de cada temporada.</p><div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px"><h4 style="font-size:.92rem;margin-bottom:4px">Autonomía del cliente <span class="tag x">Vende el extra</span></h4><p class="d">Si lo activas, el cliente podrá cambiar el tema y el texto desde su propio panel, sin pedírtelo.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="tema" data-extra="${esc(slug)}:1">✅ Activar para el cliente</button><button class="tema" data-extra="${esc(slug)}:0">🚫 Desactivar</button></div></div>`:'<div class="note">Pon la <b>URL de la web</b> del cliente arriba y guarda, para poder aplicar temas.</div>'}</div>
     <div class="panel"><h3>Versiones y cambios</h3><p class="d">Guarda un punto antes de cada cambio grande para poder volver atrás.</p>
     <form class="form" id="vf" style="margin-bottom:14px"><label class="full">Describe el cambio<input data-k="etq" placeholder="Ej.: Nueva promo de verano"></label><label class="full">Nota (opcional)<input data-k="nota"></label><button class="btn btn-g" data-ver="${cl.id}" type="button" style="width:fit-content">＋ Guardar versión actual</button></form>
