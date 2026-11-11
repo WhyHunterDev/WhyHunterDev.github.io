@@ -1,5 +1,5 @@
 /* Service Worker — Gestor WhyHunter (PWA) */
-const V = 'gestor-wh-v8';
+const V = 'gestor-wh-v9';
 const CORE = [
   './', './index.html', './manifest.webmanifest',
   './backend/conexion.js',

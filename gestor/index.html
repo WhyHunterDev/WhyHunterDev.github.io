@@ -255,6 +255,11 @@ async function logout(){ await AUTH.salir(); me=null; show('login'); }
 
 // Recuperación: si el usuario llega desde el correo, Supabase emite PASSWORD_RECOVERY.
 sb.auth.onAuthStateChange((ev)=>{ if(ev==='PASSWORD_RECOVERY'){ recovery=true; } });
+/* Sesión del gestor siempre activa: renueva el acceso antes de que venza, también al volver a la ventana o tras suspender la PC. */
+const mantenerSesion=async()=>{ try{ const {data}=await sb.auth.getSession(); const ses=data&&data.session; if(ses&&ses.expires_at*1000-Date.now()<10*60e3) await sb.auth.refreshSession(); }catch(_){} };
+setInterval(mantenerSesion,4*60e3);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ try{ sb.auth.startAutoRefresh&&sb.auth.startAutoRefresh(); }catch(_){} mantenerSesion(); } });
+addEventListener('focus',mantenerSesion); addEventListener('online',mantenerSesion);
 
 // ---- Navegación ----
 const NAV=[['Gestión',[['resumen','📊','Resumen'],['clientes','🗂️','Clientes']]],['Operación',[['soporte','🛟','Modo soporte'],['backups','💾','Copias de seguridad'],['registro','🕑','Mi registro']]],['Cuenta',[['cuenta','🔑','Mi cuenta']]]];
