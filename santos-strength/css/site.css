@@ -492,3 +492,4 @@ body.mant{overflow:hidden}
 .cafe-cerrado{display:flex;flex-direction:column;gap:.15rem;margin-top:.6rem;padding:.85rem 1rem;border-radius:14px;background:rgba(255,90,90,.1);border:1px solid rgba(255,90,90,.28);color:#ffd0d0;font-size:.92rem}
 .cafe-cerrado b{color:#fff}
 .cafe-cerrado span{color:#f1b9b9;font-size:.84rem}
+.cafe-status.todas{background:rgba(255,255,255,.06);color:#ddd}
