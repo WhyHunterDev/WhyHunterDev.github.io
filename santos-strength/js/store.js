@@ -105,6 +105,12 @@
         { id: 'p2', tipo: 'Evento', titulo: 'Reto Deadlift Santos', descripcion: 'Competencia interna de peso muerto por categorías. Premios para el top 3 y polo oficial para todos.', sede: 'manchay', media: 'img/hero.jpg', mediaTipo: 'image', inicio: today(-1), fin: today(25), estado: 'publicado', autor: 'Recepción Manchay', creado: Date.now() - 86400000 },
         { id: 'p3', tipo: 'Evento', titulo: 'Noche de Baile Fitness', descripcion: 'Clase especial de baile con DJ en vivo. Cupos limitados, separa tu lugar por WhatsApp.', sede: 'vmt', media: 'img/clase.jpg', mediaTipo: 'image', inicio: today(-2), fin: today(10), estado: 'publicado', autor: 'Recepción Villa María', creado: Date.now() - 86400000 * 2 }
       ],
+      clases: [
+        { id: 'k1', nombre: 'Funcional', tipo: 'Funcional', coach: 'c2', profe: '', sede: 'manchay', dias: ['lun', 'mie', 'vie'], hora: '07:00', duracion: 60, nota: 'Trae toalla y agua', activo: true },
+        { id: 'k2', nombre: 'Baile fitness', tipo: 'Baile', coach: 'c2', profe: '', sede: 'manchay', dias: ['mar', 'jue'], hora: '19:00', duracion: 60, nota: '', activo: true },
+        { id: 'k3', nombre: 'Crossfit', tipo: 'Crossfit', coach: 'c3', profe: '', sede: 'vmt', dias: ['lun', 'mie', 'vie'], hora: '18:30', duracion: 60, nota: 'Cupos limitados', activo: true },
+        { id: 'k4', nombre: 'Cardio intenso', tipo: 'Cardio', coach: 'c4', profe: '', sede: 'vmt', dias: ['mar', 'jue', 'sab'], hora: '08:00', duracion: 45, nota: '', activo: true }
+      ],
       galeria: [
         { id: 'r9', media: 'vid/r9.mp4', poster: 'vid/r9.jpg', mediaTipo: 'video', sede: 'todas', categoria: 'Tips', titulo: '¿Qué te hace realmente fuerte?', estado: 'publicado', destacado: true },
         { id: 'r4', media: 'vid/r4.mp4', poster: 'vid/r4.jpg', mediaTipo: 'video', sede: 'manchay', categoria: 'Sedes', titulo: 'Cómo llegar a Manchay', estado: 'publicado', destacado: true },
@@ -148,7 +154,7 @@
   const passOK = (p) => p.length >= 8 && /[A-Za-z]/.test(p) && /\d/.test(p);
 
   // Claves de contenido que viven en la nube (tabla 'contenido').
-  const CLAVES = ['config', 'sedes', 'planes', 'pase', 'notaPlanes', 'entrenadores', 'cafetin', 'publicaciones', 'galeria'];
+  const CLAVES = ['config', 'sedes', 'planes', 'pase', 'notaPlanes', 'entrenadores', 'clases', 'cafetin', 'publicaciones', 'galeria'];
   const B = () => window.SS_BACKEND;
 
   async function load() {

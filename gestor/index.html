@@ -465,7 +465,7 @@ async function restaurarBackup(ts,sid){
   return data.length;
 }
 let bkPreview=null;
-const BK_SEC={config:['🎨','Inicio, textos, tema y ajustes'],sedes:['📍','Sedes (WhatsApp, horarios, cafetín)'],planes:['💳','Planes y precios'],pase:['🎟️','Pase diario'],notaPlanes:['📝','Nota de planes'],entrenadores:['🏋️','Coaches'],cafetin:['🥤','Cafetín (productos y combos)'],publicaciones:['📣','Promos y eventos'],galeria:['🎬','Galería']};
+const BK_SEC={config:['🎨','Inicio, textos, tema y ajustes'],sedes:['📍','Sedes (WhatsApp, horarios, cafetín)'],planes:['💳','Planes y precios'],pase:['🎟️','Pase diario'],notaPlanes:['📝','Nota de planes'],entrenadores:['🏋️','Coaches'],clases:['🗓️','Horario de clases'],cafetin:['🥤','Cafetín (productos y combos)'],publicaciones:['📣','Promos y eventos'],galeria:['🎬','Galería']};
 const bkLabel=x=>x&&typeof x==='object'?(x.titulo||x.nombre||x.negocio||x.id||'(sin nombre)'):String(x);
 const bkVal=v=>{ if(v===null||v===undefined||v==='') return '∅ vacío'; if(typeof v==='boolean') return v?'Sí':'No';
   if(typeof v==='object') return Array.isArray(v)?`[${v.length} elementos]`:'{…}';

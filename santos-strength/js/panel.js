@@ -68,6 +68,8 @@
   }
   const thumb = async (r) => r ? (isVid(r) ? `<video src="${esc(await U(r))}" muted preload="metadata"></video>` : `<img src="${esc(await U(r))}" alt="">`) : '';
 
+  const DIAS = [['lun', 'Lunes'], ['mar', 'Martes'], ['mie', 'Miércoles'], ['jue', 'Jueves'], ['vie', 'Viernes'], ['sab', 'Sábado'], ['dom', 'Domingo']];
+  const h12 = (h) => { const [a, b] = String(h || '').split(':'); if (a === undefined || b === undefined) return h || ''; const n = +a; return `${n % 12 || 12}:${b} ${n < 12 ? 'am' : 'pm'}`; };
   // ---------- Campos de formulario ----------
   // f = [clave, etiqueta, tipo, opciones]
   async function field(obj, [k, lab, t = 'text', o = {}]) {
@@ -78,6 +80,7 @@
     if (t === 'area') return `<label class="full">${esc(lab)}<textarea data-k="${k}" rows="${o.rows || 3}" maxlength="${o.max || 1200}">${esc(v)}</textarea>${hint}</label>`;
     if (t === 'lines') return `<label class="full">${esc(lab)}<textarea data-k="${k}" data-t="lines" rows="${o.rows || 4}">${esc((v || []).join('\n'))}</textarea><span class="hint">${esc(o.hint || 'Uno por línea.')}</span></label>`;
     if (t === 'rows') return `<label class="full">${esc(lab)}<textarea data-k="${k}" data-t="rows" data-cols="${o.cols || ''}" rows="${o.rows || 4}">${esc((v || []).map((r) => (Array.isArray(r) ? r : o.cols.split(',').map((c) => r[c] ?? '')).join(' | ')).join('\n'))}</textarea><span class="hint">${esc(o.hint)}</span></label>`;
+    if (t === 'dias') return `<div class="full"><label>${esc(lab)}</label><div class="chk" data-k="${k}" data-t="dias">${DIAS.map(([a, b]) => `<label class="ck"><input type="checkbox" value="${a}" ${(v || []).includes(a) ? 'checked' : ''}>${esc(b)}</label>`).join('')}</div>${hint}</div>`;
     if (t === 'sedes') { const opts = [...data.sedes.map((s) => [s.id, s.nombre])]; return `<div class="full"><label>${esc(lab)}</label><div class="chk" data-k="${k}" data-t="sedes">${opts.map(([a, b]) => `<label class="ck"><input type="checkbox" value="${a}" ${(v || []).includes(a) ? 'checked' : ''}>${esc(b)}</label>`).join('')}</div></div>`; }
     if (t === 'media' || t === 'medias') {
       const list = t === 'media' ? (v ? [v] : []) : v || [];
@@ -96,7 +99,7 @@
       else if (t === 'num') v = el.value === '' ? '' : +el.value;
       else if (t === 'lines') v = el.value.split('\n').map((s) => s.trim()).filter(Boolean);
       else if (t === 'rows') { const cols = el.dataset.cols; v = el.value.split('\n').filter((s) => s.trim()).map((l) => { const p = l.split('|').map((s) => s.trim()); return cols ? Object.fromEntries(cols.split(',').map((c, i) => [c, p[i] || ''])) : p; }); }
-      else if (t === 'sedes') v = $$('input:checked', el).map((i) => i.value);
+      else if (t === 'sedes' || t === 'dias') v = $$('input:checked', el).map((i) => i.value);
       else if (t === 'media') v = JSON.parse(el.value)[0] || '';
       else if (t === 'medias') v = JSON.parse(el.value);
       else v = el.value.trim();
@@ -171,7 +174,7 @@
   const NAV = [
     ['General', [['resumen', '📊', 'Resumen', 'all']]],
     ['Página web', [['contenido', '🎨', 'Contenido de inicio', 'admin'], ['planes', '💳', 'Planes y precios', 'admin'], ['sedes', '📍', 'Sedes', 'admin']]],
-    ['Publicar', [['promos', '📣', 'Promos y eventos', 'admin,recepcion'], ['galeria', '🎬', 'Galería', 'admin,recepcion'], ['coaches', '🏋️', 'Coaches', 'admin'], ['cafetin', '🥤', 'Cafetín', 'admin,cafetin']]],
+    ['Publicar', [['promos', '📣', 'Promos y eventos', 'admin,recepcion'], ['galeria', '🎬', 'Galería', 'admin,recepcion'], ['clases', '🗓️', 'Horario de clases', 'admin,recepcion'], ['coaches', '🏋️', 'Coaches', 'admin'], ['cafetin', '🥤', 'Cafetín', 'admin,cafetin']]],
     ['Equipo', [['usuarios', '👥', 'Usuarios', 'admin'], ['actividad', '🕑', 'Actividad', 'admin']]],
     ['Ayuda', [['guia', '📘', 'Guía de uso', 'all'], ['cuenta', '🔑', 'Mi cuenta', 'all']]]
   ];
@@ -204,7 +207,7 @@
     const items = getP(data, def.key).filter(def.filtro || (() => true));
     if (editing) {
       const it = editing === 'new' ? def.nuevo() : structuredClone(items.find((x) => x.id === editing) || def.nuevo());
-      return `<div class="panel"><h3>${editing === 'new' ? 'Nuevo' : 'Editar'} ${esc(def.etiqueta)}</h3><p class="d">Los cambios se publican en la web al guardar.</p>${await form(it, def.campos(it))}
+      return `<div class="panel"><h3>${editing === 'new' ? (def.fem ? 'Nueva' : 'Nuevo') : 'Editar'} ${esc(def.etiqueta)}</h3><p class="d">Los cambios se publican en la web al guardar.</p>${await form(it, def.campos(it))}
         <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap"><button class="btn btn-y" data-save="${it.id}">Guardar</button><button class="btn btn-g" data-cancel>Cancelar</button>${editing !== 'new' ? `<button class="btn btn-bad" data-del="${it.id}" style="margin-left:auto">Eliminar</button>` : ''}</div></div>`;
     }
     $('#topActs').innerHTML = `<button class="btn btn-y" data-new>＋ Agregar ${esc(def.etiqueta)}</button>`;
@@ -226,13 +229,24 @@
       campos: () => [['tipo', 'Tipo', 'select', { opts: [['Promo', 'Promoción'], ['Evento', 'Evento'], ['Aviso', 'Aviso']] }], ['sede', 'Sede', 'select', { opts: [['todas', 'Todas las sedes'], ...data.sedes.map((x) => [x.id, x.nombre])] }], ['titulo', 'Título', 'text', { full: 1, req: 1, max: 80 }], ['descripcion', 'Descripción', 'area'], ['inicio', 'Desde', 'date'], ['fin', 'Hasta', 'date', { hint: 'Se oculta sola cuando vence.' }], ['media', 'Foto o video', 'media', { accept: 'image/*,video/*' }]],
       img: (p) => p.media, nombre: (p) => p.titulo, sub: (p) => `${p.tipo} · ${sedeName(p.sede)} · hasta ${p.fin || '—'}${p.fin && p.fin < SS.today() ? ' (vencido)' : ''}`,
       antes: (p) => { p.mediaTipo = isVid(p.media) ? 'video' : 'image'; } },
-    galeria: { key: 'galeria', etiqueta: 'foto o video', estado: true, paginar: true,
+    galeria: { key: 'galeria', etiqueta: 'foto o video', fem: true, estado: true, paginar: true,
       filtro: () => true,                                   // recepción ve y edita la galería de todas las sedes
       puede: () => isAdmin() || me.rol === 'recepcion' || !mySede(),
       nuevo: () => ({ id: SS.uid(), media: '', poster: '', mediaTipo: 'image', sede: mySede() || 'todas', categoria: 'Entrenamiento', titulo: '', estado: nuevoEstado(), destacado: false }),
       campos: () => [['media', 'Archivo', 'media', { accept: 'image/*,video/*', hint: 'Videos verticales (9:16) se ven mejor. Las fotos se optimizan solas.' }], ['titulo', 'Título corto', 'text', { max: 60 }], ['categoria', 'Categoría', 'text', { hint: 'Ej.: Entrenamiento, Humor, Eventos, Promos, Sedes, Tips' }], ['sede', 'Sede', 'select', { opts: [['todas', 'Todas las sedes'], ...data.sedes.map((x) => [x.id, x.nombre])] }], ['destacado', 'Mostrar en la portada (solo videos)', 'bool']],
       img: (g) => g.mediaTipo === 'video' ? g.poster || g.media : g.media, nombre: (g) => g.titulo || '(sin título)', sub: (g) => `${g.mediaTipo === 'video' ? '🎬 Video' : '📷 Foto'} · ${g.categoria || 'General'} · ${sedeName(g.sede)}${g.destacado ? ' · ⭐ portada' : ''}`,
       antes: (g) => { if (!g.media) throw new Error('Sube un archivo'); g.mediaTipo = isVid(g.media) ? 'video' : 'image'; if (posters[g.media]) g.poster = posters[g.media]; if (g.mediaTipo === 'image') g.poster = ''; } },
+    clases: { key: 'clases', etiqueta: 'clase', fem: true,
+      filtro: () => true,
+      puede: () => isAdmin() || me.rol === 'recepcion' || !mySede(),
+      nuevo: () => ({ id: SS.uid(), nombre: '', tipo: 'Funcional', coach: '', profe: '', sede: mySede() || data.sedes[0]?.id || 'todas', dias: ['lun', 'mie', 'vie'], hora: '07:00', duracion: 60, nota: '', activo: true }),
+      campos: () => [['nombre', 'Nombre de la clase', 'text', { req: 1, max: 60, hint: 'Ej.: Funcional, Baile, Crossfit, Zumba, Spinning' }], ['tipo', 'Tipo', 'text', { max: 30, hint: 'Sirve para filtrar en la web. Ej.: Funcional, Baile, Crossfit, Cardio' }],
+        ['sede', 'Sede', 'select', { opts: [['todas', 'Todas las sedes'], ...data.sedes.map((x) => [x.id, x.nombre])] }], ['coach', 'Profesor (de Coaches)', 'select', { opts: [['', '— Otro / por definir —'], ...data.entrenadores.map((c) => [c.id, c.nombre])] }],
+        ['profe', 'Otro profesor (si no está en Coaches)', 'text', { max: 60 }], ['dias', 'Días', 'dias'], ['hora', 'Hora de inicio', 'time'], ['duracion', 'Duración (minutos)', 'num'],
+        ['nota', 'Nota para los alumnos', 'text', { full: 1, max: 120, hint: 'Opcional. Ej.: Cupos limitados, trae toalla.' }], ['activo', 'Mostrar en la web', 'bool']],
+      img: () => '', nombre: (k) => `${k.nombre} · ${h12(k.hora)}`,
+      sub: (k) => `${(k.dias || []).map((d) => (DIAS.find((x) => x[0] === d) || [, d])[1].slice(0, 3)).join(' ')} · ${sedeName(k.sede)} · ${(data.entrenadores.find((c) => c.id === k.coach) || {}).nombre || k.profe || 'Profesor por definir'}${k.activo === false ? ' · oculta' : ''}`,
+      antes: (k) => { if (!(k.dias || []).length) throw new Error('Marca al menos un día'); if (!/^\d{2}:\d{2}$/.test(k.hora || '')) throw new Error('Pon la hora de inicio'); k.duracion = +k.duracion || 60; } },
     coaches: { key: 'entrenadores', etiqueta: 'coach',
       nuevo: () => ({ id: SS.uid(), nombre: 'Coach ', sede: data.sedes[0]?.id, especialidad: '', mensaje: '', bio: '', logros: [], foto: '', pos: 'center', fotos: [], video: '', ig: '' }),
       campos: () => [['nombre', 'Nombre', 'text', { req: 1 }], ['sede', 'Sede', 'select', { opts: sedeOpts(false) }], ['especialidad', 'Especialidad', 'text', { full: 1 }], ['mensaje', 'Frase para los clientes', 'text', { full: 1, max: 140 }], ['bio', 'Presentación', 'area', { rows: 4 }], ['logros', 'Logros y certificaciones', 'lines'], ['foto', 'Foto principal', 'media'], ['fotos', 'Más fotos', 'medias'], ['video', 'Video de presentación', 'media', { accept: 'video/*', hint: 'Un video corto (30–60 s) presentándose.' }], ['ig', 'Instagram (enlace, opcional)', 'url'], ['pos', 'Encuadre de la foto', 'select', { opts: [['center', 'Centro'], ['50% 20%', 'Arriba'], ['50% 80%', 'Abajo'], ['30% 30%', 'Izquierda'], ['70% 30%', 'Derecha']] }]],
@@ -270,6 +284,7 @@
   const crudView = (k, t, sub) => async () => { DEF = DEFS[k]; return title(t, sub) + await crudList(DEFS[k]); };
   V.promos = crudView('promos', 'Promos y eventos', 'Lo que publiques aparece en la web al instante y se oculta solo al vencer.');
   V.galeria = crudView('galeria', 'Galería', 'Todo queda ordenado en la pestaña Galería de la web, sin alargar la página.');
+  V.clases = async () => { data.clases = data.clases || []; DEF = DEFS.clases; return title('Horario de clases', 'Funcional, baile, crossfit… Agrega cada clase con su profesor, días y hora. Aparece en la web en la pestaña Clases.') + await crudList(DEFS.clases); };
   V.coaches = crudView('coaches', 'Coaches', 'Cada coach tiene su propia página con fotos y video.');
   V.sedes = crudView('sedes', 'Sedes', 'Agrega, edita o elimina sedes. Cada una tiene su WhatsApp de recepción.');
   let cafeTab = 'cafe';

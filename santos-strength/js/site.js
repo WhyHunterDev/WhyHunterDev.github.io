@@ -203,6 +203,25 @@
       <a class="btn btn-y" target="_blank" rel="noopener" href="${SS.waLink(waSede().whatsapp, `Hola Santos Strength 👋 Mi objetivo es ${t.toLowerCase()}. Quiero el plan ${plan.nombre}.`)}">${WA}Empezar por WhatsApp</a>`;
   }
 
+  const DIAS_W = [['lun', 'Lunes'], ['mar', 'Martes'], ['mie', 'Miércoles'], ['jue', 'Jueves'], ['vie', 'Viernes'], ['sab', 'Sábado'], ['dom', 'Domingo']];
+  const hora12 = (h) => { const [a, b] = String(h || '').split(':'); if (b === undefined) return h || ''; const n = +a; return `${n % 12 || 12}:${b} ${n < 12 ? 'am' : 'pm'}`; };
+  const hoyDia = () => { try { return { Mon: 'lun', Tue: 'mar', Wed: 'mie', Thu: 'jue', Fri: 'vie', Sat: 'sab', Sun: 'dom' }[new Date().toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/Lima' })] || 'lun'; } catch (_) { return 'lun'; } };
+  let claseTipo = 'todas';
+  const clasesVis = () => (data.clases || []).filter((k) => k.activo !== false && enSede(k));
+  P.clases = async () => {
+    const all = clasesVis(), tipos = [...new Set(all.map((k) => k.tipo || k.nombre).filter(Boolean))];
+    if (claseTipo !== 'todas' && !tipos.includes(claseTipo)) claseTipo = 'todas';
+    const list = all.filter((k) => claseTipo === 'todas' || (k.tipo || k.nombre) === claseTipo), hoy = hoyDia();
+    const coachDe = (k) => data.entrenadores.find((c) => c.id === k.coach);
+    const card = (k, d) => { const c = coachDe(k), prof = c ? c.nombre : k.profe;
+      return `<button class="clase" data-clase="${esc(k.id)}" data-dia="${d}"><b class="ch">${esc(hora12(k.hora))}</b><span class="cn">${esc(k.nombre)}</span>${prof ? `<span class="cp">con ${esc(prof)}</span>` : ''}<span class="cm">${esc(k.duracion || 60)} min${sede === 'todas' ? ' · ' + esc(sedeName(k.sede)) : ''}</span>${k.nota ? `<span class="cnota">${esc(k.nota)}</span>` : ''}</button>`; };
+    const cols = DIAS_W.map(([d, n]) => { const ks = list.filter((k) => (k.dias || []).includes(d)).sort((a, b) => String(a.hora).localeCompare(String(b.hora)));
+      return `<div class="cl-dia ${d === hoy ? 'hoy' : ''}" ${d === hoy ? 'id="clHoy"' : ''}><h4>${n}${d === hoy ? ' <small>Hoy</small>' : ''}</h4>${ks.map((k) => card(k, d)).join('') || '<p class="cl-vacio">Sin clases</p>'}</div>`; }).join('');
+    const chips = tipos.length > 1 ? `<div class="chips" style="margin-top:.8rem">${[['todas', 'Todas las clases'], ...tipos.map((x) => [x, x])].map(([id, n]) => `<button class="chip ${id === claseTipo ? 'on' : ''}" data-ctipo="${esc(id)}">${esc(n)}</button>`).join('')}</div>` : '';
+    return head('Horario', 'Clases', 'grupales', 'Funcional, baile, crossfit y más. Toca una clase para separar tu cupo por WhatsApp.', sedeChips() + chips) +
+      `<section class="sec" style="padding-top:0"><div class="wrap">${all.length ? `<div class="cl-week">${cols}</div>` : '<div class="empty">Pronto publicaremos el horario de clases de esta sede.</div>'}</div></section>`;
+  };
+
   P.coaches = async () => {
     const list = data.entrenadores.filter(enSede);
     const cards = await Promise.all(list.map(async (c) => `<a class="coach rv" href="#/coach/${c.id}">${c.foto ? `<img src="${esc(await U(c.foto))}" alt="${esc(c.nombre)}" style="object-position:${esc(c.pos || 'center')}" loading="lazy">` : `<div class="ini">${esc((c.nombre.replace(/^coach\s+/i, '')[0] || 'S').toUpperCase())}</div>`}
@@ -348,12 +367,13 @@
     const y = scrollY, changed = route !== h; route = h;
     nav.classList.toggle('inner', key !== 'inicio');
     const tabKey = key === 'coach' ? 'coaches' : key;
-    $$('#tabs a,#bbar [data-r]').forEach((a) => a.classList.toggle('on', a.dataset.r === tabKey || (a.id === 'moreBtn' && ['sedes', 'galeria', 'promos'].includes(tabKey))));
+    $$('#tabs a,#bbar [data-r]').forEach((a) => a.classList.toggle('on', a.dataset.r === tabKey || (a.id === 'moreBtn' && ['clases', 'sedes', 'galeria', 'promos'].includes(tabKey))));
     moveInd();
     app.innerHTML = `<div class="page">${await P[key](arg)}</div>`;
-    document.title = (key === 'inicio' ? '' : ({ planes: 'Planes', coaches: 'Coaches', coach: 'Coach', cafetin: 'Cafetín fit', sedes: 'Sedes', galeria: 'Galería', promos: 'Promos' }[key] + ' · ')) + 'Santos Strength';
+    document.title = (key === 'inicio' ? '' : ({ planes: 'Planes', coaches: 'Coaches', coach: 'Coach', clases: 'Horario de clases', cafetin: 'Cafetín fit', sedes: 'Sedes', galeria: 'Galería', promos: 'Promos' }[key] + ' · ')) + 'Santos Strength';
     if (changed && !keepScroll) scrollTo(0, 0); else scrollTo(0, y);
     afterRender();
+    if (key === 'clases' && innerWidth < 900) { const hc = $('#clHoy'); if (hc) hc.parentNode.scrollLeft = hc.offsetLeft - 16; }
   }
   addEventListener('hashchange', () => { $('#moreSheet').classList.remove('on'); closeAll(); render(); });
 
@@ -416,6 +436,8 @@
     if ((el = t('[data-pick]'))) { $('#sheet').classList.remove('on'); setTimeout(() => setSede(el.dataset.pick), 300); return; }
     if ((el = t('[data-wa]'))) { e.preventDefault(); openSheet(el.dataset.plan); return; }
     if ((el = t('[data-goal]'))) { renderQuiz(el.dataset.goal); return; }
+    if ((el = t('[data-ctipo]'))) { claseTipo = el.dataset.ctipo; render(true); return; }
+    if ((el = t('[data-clase]'))) { const k = (data.clases || []).find((x) => x.id === el.dataset.clase); if (k) { const s = (k.sede && k.sede !== 'todas' && sedeObj(k.sede)) || waSede(), dn = (DIAS_W.find((x) => x[0] === el.dataset.dia) || [, ''])[1]; open(SS.waLink(s.whatsapp, `Hola Santos Strength 👋 Quiero separar mi cupo en la clase de ${k.nombre} del ${dn.toLowerCase()} a las ${hora12(k.hora)} (sede ${s.nombre}).`), '_blank', 'noopener'); } return; }
     if ((el = t('[data-cat]'))) { cat = el.dataset.cat; render(true); return; }
     if ((el = t('[data-combo]'))) { openCombo(el.dataset.combo); return; }
     if ((el = t('[data-item]'))) { openItem(el.dataset.item); return; }
