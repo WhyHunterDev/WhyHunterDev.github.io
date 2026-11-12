@@ -338,7 +338,7 @@
     navidad:        { nom: 'Navidad', emo: '🎄', tag: 'Edición Navidad', titulo: 'Regálate tu mejor versión', promo: '2×1 en inscripción, solo diciembre', fx: 'nieve', cols: ['#ffffff', '#dff3ff'], hasta: '12-31', lights: true },
     halloween:      { nom: 'Halloween', emo: '🎃', tag: 'Reto Halloween', titulo: 'Sin miedo al cambio', promo: 'Inscríbete y llévate 1 semana gratis', fx: 'brasas', cols: ['#ff8a1f', '#ffc078', '#b06bff'], hasta: '10-31' },
     anionuevo:      { nom: 'Año Nuevo', emo: '🎆', tag: 'Año Nuevo', titulo: 'Año nuevo, nueva versión de ti', promo: '20% de descuento en planes anuales', fx: 'fuegos', cols: ['#f1c84b', '#ffe9a8', '#ffffff', '#ffb347'], hasta: '01-15' },
-    fiestaspatrias: { nom: 'Fiestas Patrias', emo: '🇵🇪', tag: 'Fiestas Patrias', titulo: 'Entrena con orgullo peruano', promo: 'Plan 3 meses al precio de 2', fx: 'fuegos', cols: ['#ff2a3d', '#ffffff', '#ff6b78'], hasta: '07-31' },
+    fiestaspatrias: { nom: 'Fiestas Patrias', emo: '', flag: 1, tag: 'Fiestas Patrias', titulo: 'Entrena con orgullo peruano', promo: 'Plan 3 meses al precio de 2', fx: 'fuegos', cols: ['#ff2a3d', '#ffffff', '#ff6b78'], hasta: '07-31' },
     sanvalentin:    { nom: 'San Valentín', emo: '❤️', tag: 'Plan Pareja', titulo: 'Entrenar en dúo es mejor', promo: 'Inscríbete con tu pareja y paguen menos', fx: 'corazones', cols: ['#ff4d6d', '#ff8fa3', '#ffd1dc'], hasta: '02-14' }
   };
   const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -440,7 +440,8 @@
     ['#temaDeco', '#temaRibbon', '#temaLights', '#temaPop', '#temaBadge'].forEach((s) => $(s)?.remove());
     if (fxStop) { fxStop(); fxStop = null; } clearInterval(cdTimer);
     if (!cfg) { root.removeAttribute('data-ribbon'); root.style.removeProperty('--tema-tag'); return; }
-    root.style.setProperty('--tema-tag', JSON.stringify(cfg.emo + '  ' + cfg.tag.toUpperCase()));
+    root.style.setProperty('--tema-tag', JSON.stringify((cfg.emo ? cfg.emo + '  ' : '') + cfg.tag.toUpperCase()));
+    const emoH = cfg.flag ? '<i class="flagpe" role="img" aria-label="Bandera del Perú"></i>' : cfg.emo;
     root.style.setProperty('--tema-emo', JSON.stringify(cfg.emo));
     const deco = document.createElement('div'); deco.id = 'temaDeco'; deco.setAttribute('aria-hidden', 'true');
     deco.innerHTML = '<div class="glow"></div><div class="vig"></div>'; document.body.appendChild(deco);
@@ -450,7 +451,7 @@
     const fin = temaFin(c, cfg), vivo = !!fin;
     const msg = `Vi la promo de ${cfg.nom} en la web (${promo}) y quiero aprovecharla.`;
     const rib = document.createElement('div'); rib.id = 'temaRibbon';
-    rib.innerHTML = `<span class="em">${cfg.emo}</span><b>${esc(promo)}</b>${vivo ? '<span class="cd">Termina en <i data-tcd="s">--</i></span>' : ''}<button class="go" data-wa data-msg="${esc(msg)}">Lo quiero</button><button class="x" aria-label="Cerrar">×</button>`;
+    rib.innerHTML = `<span class="em">${emoH}</span><b>${esc(promo)}</b>${vivo ? '<span class="cd">Termina en <i data-tcd="s">--</i></span>' : ''}<button class="go" data-wa data-msg="${esc(msg)}">Lo quiero</button><button class="x" aria-label="Cerrar">×</button>`;
     rib.querySelector('.x').addEventListener('click', (e) => { e.stopPropagation(); rib.remove(); root.removeAttribute('data-ribbon'); });
     rib.addEventListener('click', (e) => { if (!e.target.closest('button')) temaPop(true); });
     document.body.appendChild(rib); root.setAttribute('data-ribbon', '');
@@ -460,7 +461,7 @@
       if (!force) { try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1'); } catch (_) {} }
       const m = document.createElement('div'); m.id = 'temaPop'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); m.setAttribute('aria-label', cfg.tag);
       m.innerHTML = `<div class="tp-card"><button class="x" aria-label="Cerrar">×</button>
-        <div class="tp-emo">${cfg.emo}</div><span class="tp-tag">${esc(cfg.tag)}</span>
+        <div class="tp-emo">${emoH}</div><span class="tp-tag">${esc(cfg.tag)}</span>
         <h2 class="tp-t">${esc(titulo)}</h2><p class="tp-p">${esc(promo)}</p>
         ${vivo ? `<div class="tp-cd"><small>La promo termina en</small><div>${['Días', 'Horas', 'Min', 'Seg'].map((l, i) => `<span><b data-tcd="${i}">--</b><em>${l}</em></span>`).join('')}</div></div>` : ''}
         <div class="tp-ctas"><button class="btn btn-y tp-go" data-wa data-msg="${esc(msg)}">${WA}Quiero la promo</button><a class="btn btn-o" href="#/planes">Ver planes</a></div>

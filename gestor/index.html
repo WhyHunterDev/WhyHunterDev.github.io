@@ -185,7 +185,7 @@ async function guardar(c){ const {error}=await sb.from('clientes_agencia').upser
 async function borrar(id){ const {error}=await sb.from('clientes_agencia').delete().eq('id',id); if(error)throw error; }
 
 // ---- Temas de temporada (aplica a la web del cliente) ----
-const TEMAS=[['','Normal','✨'],['navidad','Navidad','🎄'],['halloween','Halloween','🎃'],['anionuevo','Año Nuevo','🎆'],['fiestaspatrias','Fiestas Patrias','🇵🇪'],['sanvalentin','San Valentín','❤️']];
+const TEMAS=[['','Normal','✨'],['navidad','Navidad','🎄'],['halloween','Halloween','🎃'],['anionuevo','Año Nuevo','🎆'],['fiestaspatrias','Fiestas Patrias','🎊'],['sanvalentin','San Valentín','❤️']];
 const slugDe=url=>{try{const p=new URL(url).pathname.split('/').filter(Boolean);return p[p.length-1]||'';}catch(_){return '';}};
 async function aplicarTema(slug,tema){
   const {data:s,error:e1}=await sb.from('sitios').select('id').eq('slug',slug).maybeSingle(); if(e1)throw e1;
@@ -316,7 +316,7 @@ async function clForm(){
     <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn btn-p" data-save>Guardar</button><a class="btn btn-g" data-cancel>Cancelar</a>${!n?`<button class="btn btn-bad" data-del="${cl.id}" style="margin-left:auto">Eliminar</button>`:''}</div></div>
     ${!n?await verPanel(cl):''}`;
 }
-const TEMA_NOM={'':'Normal','navidad':'🎄 Navidad','halloween':'🎃 Halloween','anionuevo':'🎆 Año Nuevo','fiestaspatrias':'🇵🇪 Fiestas Patrias','sanvalentin':'❤️ San Valentín'};
+const TEMA_NOM={'':'Normal','navidad':'🎄 Navidad','halloween':'🎃 Halloween','anionuevo':'🎆 Año Nuevo','fiestaspatrias':'🎊 Fiestas Patrias','sanvalentin':'❤️ San Valentín'};
 async function leerSitio(slug){
   if(!slug)return null;
   const {data:s,error:e1}=await sb.from('sitios').select('id').eq('slug',slug).maybeSingle(); if(e1)throw e1;

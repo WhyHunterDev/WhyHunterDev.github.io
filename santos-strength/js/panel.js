@@ -298,7 +298,7 @@
     if (cafeTab === 'banner') return title('Cafetín') + tabs + `<div class="panel"><p class="d">El WhatsApp y el horario de pedidos del cafetín se configuran por sede, en <b>Sedes</b> → editar cada sede.</p>${await form(data.cafetin, [['titulo', 'Título', 'text'], ['acento', 'Palabra resaltada', 'text'], ['texto', 'Texto', 'area'], ['imagen', 'Foto de portada', 'media']], 'fb')}<button class="btn btn-y" data-savecfg="fb:cafetin" style="margin-top:16px">Guardar</button></div>`;
     return title('Cafetín', 'Usa «Disponible / Agotado» para actualizar el stock en un toque.') + (editing ? '' : tabs) + await crudList(DEF);
   };
-  const TEMAS_UI = [['', 'Normal (sin tema)'], ['navidad', '🎄 Navidad'], ['halloween', '🎃 Halloween'], ['anionuevo', '🎆 Año Nuevo'], ['fiestaspatrias', '🇵🇪 Fiestas Patrias'], ['sanvalentin', '❤️ San Valentín']];
+  const TEMAS_UI = [['', 'Normal (sin tema)'], ['navidad', '🎄 Navidad'], ['halloween', '🎃 Halloween'], ['anionuevo', '🎆 Año Nuevo'], ['fiestaspatrias', '🎊 Fiestas Patrias'], ['sanvalentin', '❤️ San Valentín']];
   function temasPermitidosDe(c) {
     if (c.temasPermitidos && c.temasPermitidos.length) return c.temasPermitidos;
     if (c.temaExtra) return ['navidad', 'halloween', 'anionuevo', 'fiestaspatrias', 'sanvalentin'];

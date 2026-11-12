@@ -507,6 +507,11 @@ html[data-tema="fiestaspatrias"] #temaRibbon{border-bottom:3px solid #fff}
 html[data-tema="fiestaspatrias"] .marquee{background:linear-gradient(90deg,#d91023,#fff,#d91023);color:#111}
 html[data-tema="sanvalentin"]{--tg1:rgba(255,77,109,.3);--tg2:rgba(255,143,163,.24);--trbg:linear-gradient(90deg,#c9184a,#ff4d6d 50%,#ff8fa3);--trtx:#fff;--tema-acc:#ff5d7e}
 html[data-tema="sanvalentin"] .marquee{background:linear-gradient(90deg,#ff4d6d,#ff8fa3);color:#fff}
+.flagpe{display:inline-block;width:1.5em;height:1em;vertical-align:-.15em;border-radius:.12em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='3' height='2' fill='%23D91023'/%3E%3Crect x='1' width='1' height='2' fill='%23fff'/%3E%3C/svg%3E") center/cover;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.tp-emo .flagpe{width:4.2rem;height:2.8rem;border-radius:6px;vertical-align:middle}
+html[data-tema="fiestaspatrias"] .hero .wrap::before,html[data-tema="fiestaspatrias"] .hero-side::before{padding-left:2.6rem;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='3' height='2' fill='%23D91023'/%3E%3Crect x='1' width='1' height='2' fill='%23fff'/%3E%3C/svg%3E") 1rem center/1.2rem .8rem no-repeat,var(--trbg)}
+html[data-tema="fiestaspatrias"] .brand::after,html[data-tema="fiestaspatrias"] .plan.hot::after{content:"";width:22px;height:15px;border-radius:2px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='3' height='2' fill='%23D91023'/%3E%3Crect x='1' width='1' height='2' fill='%23fff'/%3E%3C/svg%3E") center/cover;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+html[data-tema="fiestaspatrias"] .plan.hot::after{width:42px;height:28px;border-radius:4px}
 @media(prefers-reduced-motion:reduce){#temaDeco .glow,#temaRibbon::before,#temaLights i,#temaRibbon .em,#temaRibbon .go,.tp-card,.tp-card::before,.tp-emo,.tp-go,html[data-tema] .brand::after,html[data-tema] .plan.hot::after{animation:none}}
 body.mant .nav,body.mant #app,body.mant .bbar,body.mant .fab,body.mant footer,body.mant #temaDeco,body.mant #temaRibbon,body.mant #temaLights,body.mant #temaFx,body.mant #temaPop{display:none!important}
 body.mant{overflow:hidden}
