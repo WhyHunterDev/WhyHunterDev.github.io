@@ -563,6 +563,20 @@ button.combo:hover{transform:translateY(-2px);box-shadow:0 14px 30px -14px rgba(
 .clase:hover{border-color:#555;border-left-color:var(--y);transform:translateY(-2px)}
 .clase .ch{font-size:1.05rem;font-weight:800;color:var(--y)}.clase .cn{font-weight:700;font-size:.92rem}
 .clase .cp,.clase .cm{font-size:.76rem;color:var(--mu)}.clase .cnota{font-size:.72rem;color:#d9d3c4;margin-top:3px}
+.nu-pros{display:flex;gap:12px;flex-wrap:wrap;margin-top:1.4rem}
+.nu-pro{display:flex;align-items:center;gap:12px;background:#121212;border:1px solid var(--line2);border-radius:999px;padding:6px 18px 6px 6px}
+.nu-pro img,.nu-ini{width:52px;height:52px;border-radius:50%;object-fit:cover;display:grid;place-items:center;background:#1c1c1c;font-size:1.5rem}
+.nu-pro b{display:block;font-size:.95rem}.nu-pro small{color:var(--mu);font-size:.76rem}
+.nu-pasos{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:1.2rem}
+.nu-pasos div{display:flex;align-items:center;gap:10px;font-size:.86rem;color:#d9d3c4;background:rgba(255,255,255,.025);border:1px solid var(--line2);border-radius:14px;padding:12px 14px}
+.nu-pasos b{flex:none;width:28px;height:28px;border-radius:50%;background:var(--y);color:#000;display:grid;place-items:center;font-weight:900}
+.nu-blk{min-width:0;background:#121212;border:1px solid var(--line2);border-left:3px solid #3ddc84;border-radius:12px;padding:10px 11px;display:grid;gap:7px}
+.nu-hd b{display:block;font-size:.88rem;line-height:1.3;font-weight:800;color:#3ddc84}.nu-hd span,.nu-who{font-size:.74rem;color:var(--mu)}
+.nu-slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:6px}
+.nu-slot{font-size:.74rem;font-weight:700;padding:.38rem .3rem;white-space:nowrap;border-radius:999px;border:1px solid #2f4a39;background:rgba(61,220,132,.07);color:#cfeedd;transition:.18s}
+.nu-slot:hover{background:#3ddc84;color:#000;border-color:#3ddc84;transform:translateY(-1px)}
+.nu-go{width:100%;justify-content:center;font-size:.8rem;padding:.6rem .5rem}.nu-nota{font-size:.72rem;color:#d9d3c4}
+@media(max-width:700px){.nu-pasos{grid-template-columns:1fr;gap:6px}.nu-pasos div{padding:8px 12px;font-size:.8rem}}
 .cl-vacio{font-size:.78rem;color:var(--mu);opacity:.7}
 @media(max-width:900px){.cl-week{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;margin-left:-16px;margin-right:-16px;padding:0 16px 8px}.cl-dia{flex:0 0 72%;scroll-snap-align:start}}
 .clase .cp{display:flex;align-items:center;gap:7px;margin-top:3px}.clase .cp img{width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid var(--y);flex:none}

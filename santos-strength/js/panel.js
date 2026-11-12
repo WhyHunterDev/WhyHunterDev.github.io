@@ -177,7 +177,7 @@
   const NAV = [
     ['General', [['resumen', '📊', 'Resumen', 'all']]],
     ['Página web', [['contenido', '🎨', 'Contenido de inicio', 'admin'], ['planes', '💳', 'Planes y precios', 'admin'], ['sedes', '📍', 'Sedes', 'admin']]],
-    ['Publicar', [['promos', '📣', 'Promos y eventos', 'admin,recepcion'], ['galeria', '🎬', 'Galería', 'admin,recepcion'], ['clases', '🗓️', 'Horario de clases', 'admin,recepcion'], ['coaches', '🏋️', 'Entrenadores', 'admin'], ['cafetin', '🥤', 'Cafetín', 'admin,cafetin']]],
+    ['Publicar', [['promos', '📣', 'Promos y eventos', 'admin,recepcion'], ['galeria', '🎬', 'Galería', 'admin,recepcion'], ['clases', '🗓️', 'Horario de clases', 'admin,recepcion'], ['nutricion', '🥗', 'Asesoría nutricional', 'admin,recepcion'], ['coaches', '🏋️', 'Entrenadores', 'admin'], ['cafetin', '🥤', 'Cafetín', 'admin,cafetin']]],
     ['Equipo', [['usuarios', '👥', 'Usuarios', 'admin'], ['actividad', '🕑', 'Actividad', 'admin'], ['reclamos', '📕', 'Libro de reclamaciones', 'admin']]],
     ['Ayuda', [['guia', '📘', 'Guía de uso', 'all'], ['cuenta', '🔑', 'Mi cuenta', 'all']]]
   ];
@@ -250,6 +250,19 @@
       img: (k) => k.profeFoto || (data.entrenadores.find((c) => c.id === k.coach) || {}).foto || '', nombre: (k) => `${k.nombre} · ${h12(k.hora)}`,
       sub: (k) => `${(k.dias || []).map((d) => (DIAS.find((x) => x[0] === d) || [, d])[1].slice(0, 3)).join(' ')} · ${sedeName(k.sede)} · ${(data.entrenadores.find((c) => c.id === k.coach) || {}).nombre || k.profe || 'Profesor por definir'}${k.activo === false ? ' · oculta' : ''}`,
       antes: (k) => { if (!(k.dias || []).length) throw new Error('Marca al menos un día'); if (!/^\d{2}:\d{2}$/.test(k.hora || '')) throw new Error('Pon la hora de inicio'); k.duracion = +k.duracion || 60; } },
+    nutricion: { key: 'nutricion', etiqueta: 'horario', fem: false,
+      filtro: () => true,
+      puede: () => isAdmin() || me.rol === 'recepcion' || !mySede(),
+      nuevo: () => ({ id: SS.uid(), nutri: (data.nutricion || [])[0]?.nutri || '', foto: (data.nutricion || [])[0]?.foto || '', sede: mySede() || data.sedes[0]?.id || 'todas', dias: ['lun', 'mie', 'vie'], desde: '08:00', hasta: '12:00', cita: 30, modalidad: 'Presencial', nota: '', activo: true }),
+      campos: () => [['nutri', 'Nutricionista', 'text', { req: 1, max: 60, hint: 'Ej.: Lic. Carla Rojas' }], ['sede', 'Sede', 'select', { opts: [['todas', 'Todas las sedes'], ...data.sedes.map((x) => [x.id, x.nombre])] }],
+        ['dias', 'Días que atiende', 'dias'], ['desde', 'Desde', 'time'], ['hasta', 'Hasta', 'time'],
+        ['cita', 'Duración de cada cita', 'select', { opts: [['20', '20 minutos'], ['30', '30 minutos'], ['45', '45 minutos'], ['60', '1 hora'], ['0', 'Sin turnos (solo mostrar el rango)']] }],
+        ['modalidad', 'Modalidad', 'select', { opts: [['Presencial', 'Presencial'], ['Virtual', 'Virtual (videollamada)'], ['Presencial o virtual', 'Presencial o virtual']] }],
+        ['foto', 'Foto de la nutricionista', 'media', { hint: 'Opcional. Da confianza ver a quién te atiende.' }],
+        ['nota', 'Nota', 'text', { full: 1, max: 120, hint: 'Opcional. Ej.: Ven en ayunas, trae tu última evaluación.' }], ['activo', 'Mostrar en la web', 'bool']],
+      img: (n) => n.foto || '', nombre: (n) => `${n.nutri} · ${h12(n.desde)} a ${h12(n.hasta)}`,
+      sub: (n) => `${(n.dias || []).map((d) => (DIAS.find((x) => x[0] === d) || [, d])[1].slice(0, 3)).join(' ')} · ${sedeName(n.sede)} · ${n.modalidad || 'Presencial'}${n.activo === false ? ' · oculto' : ''}`,
+      antes: (n) => { if (!(n.dias || []).length) throw new Error('Marca al menos un día'); if (!(n.desde < n.hasta)) throw new Error('La hora «Hasta» debe ser después de «Desde»'); n.cita = +n.cita || 0; } },
     coaches: { key: 'entrenadores', etiqueta: 'entrenador',
       antes: (c) => { const v = String(c.ig || '').trim(), m = v.match(/instagram\.com\/([A-Za-z0-9._]+)/i), u = (m ? m[1] : v.replace(/^@+/, '').replace(/[/?#].*$/, '')).replace(/[^A-Za-z0-9._]/g, ''); c.ig = u ? '@' + u : ''; },
       nuevo: () => ({ id: SS.uid(), nombre: '', sede: data.sedes[0]?.id, especialidad: '', mensaje: '', bio: '', logros: [], foto: '', pos: 'center', fotos: [], video: '', ig: '' }),
@@ -289,6 +302,7 @@
   V.promos = crudView('promos', 'Promos y eventos', 'Lo que publiques aparece en la web al instante y se oculta solo al vencer.');
   V.galeria = crudView('galeria', 'Galería', 'Todo queda ordenado en la pestaña Galería de la web, sin alargar la página.');
   V.clases = async () => { data.clases = data.clases || []; DEF = DEFS.clases; return title('Horario de clases', 'Funcional, baile, crossfit… Agrega cada clase con su profesor, días y hora. Aparece en la web en la pestaña Clases.') + await crudList(DEFS.clases); };
+  V.nutricion = async () => { data.nutricion = data.nutricion || []; DEF = DEFS.nutricion; return title('Asesoría nutricional', 'Pon los días y horas en que atiende la nutricionista en cada sede. En la web la gente elige un turno y separa su cupo por WhatsApp con la sede.') + await crudList(DEFS.nutricion); };
   V.coaches = crudView('coaches', 'Entrenadores', 'Cada entrenador tiene su propia página con fotos y video.');
   V.sedes = crudView('sedes', 'Sedes', 'Agrega, edita o elimina sedes. Cada una tiene su WhatsApp de recepción.');
   let cafeTab = 'cafe';

@@ -175,7 +175,7 @@
         <div class="pm">Equivale a <b>${soles(Math.round(pr / p.meses))}</b> al mes</div>
         ${ahorro > 0 ? `<span class="save">Ahorras ${soles(ahorro)}</span>` : ''}
         ${eventoOn(p) ? `<div class="evt"><span>⚡ ${esc(p.eventoTexto || 'Precio de evento')}</span><b>${p.eventoHasta ? 'hasta ' + fmt(p.eventoHasta) : ''}</b></div>` : ''}
-        <ul><li>Lunes a sábado, todo el día</li><li>Todas las clases incluidas</li><li>Rutina + asesoría nutricional</li></ul>
+        <ul><li>Lunes a sábado, todo el día</li><li>Todas las clases incluidas</li><li>Rutina + <a href="#/nutricion" style="text-decoration:underline">asesoría nutricional</a></li></ul>
         <button class="btn ${p.destacado ? '' : 'btn-o'}" data-wa data-plan="${esc(p.nombre)}">Quiero ${esc(p.nombre)}</button></article>`;
     }).join('');
     return head('Membresías', 'Mientras más largo,', 'más ahorras', 'Todos los planes incluyen todas las clases, rutina armada por tu entrenador y asesoría nutricional.') + `
@@ -222,6 +222,29 @@
     const chips = tipos.length > 1 ? `<div class="chips" style="margin-top:.8rem">${[['todas', 'Todas las clases'], ...tipos.map((x) => [x, x])].map(([id, n]) => `<button class="chip ${id === claseTipo ? 'on' : ''}" data-ctipo="${esc(id)}">${esc(n)}</button>`).join('')}</div>` : '';
     return head('Horario', 'Clases', 'grupales', 'Funcional, baile, crossfit y más. Toca una clase para separar tu cupo por WhatsApp.', sedeChips() + chips) +
       `<section class="sec" style="padding-top:0"><div class="wrap">${all.length ? `<div class="cl-week">${cols}</div>` : '<div class="empty">Pronto publicaremos el horario de clases de esta sede.</div>'}</div></section>`;
+  };
+
+  // ---------- Asesoría nutricional ----------
+  const nutriVis = () => (data.nutricion || []).filter((n) => n.activo !== false && enSede(n));
+  const toMin = (h) => { const [a, b] = String(h || '0:0').split(':').map(Number); return a * 60 + (b || 0); };
+  const fromMin = (m) => p2(Math.floor(m / 60)) + ':' + p2(m % 60);
+  P.nutricion = async () => {
+    const all = nutriVis(), hoy = hoyDia();
+    const fotos = {}; await Promise.all(all.map(async (n) => { if (n.foto) fotos[n.id] = await U(n.foto); }));
+    const nutris = [...new Map(all.map((n) => [n.nutri, n])).values()].map((n) => all.find((x) => x.nutri === n.nutri && x.foto) || n);
+    const pro = nutris.length ? `<div class="nu-pros">${nutris.map((n) => `<div class="nu-pro">${fotos[n.id] ? `<img src="${esc(fotos[n.id])}" alt="" loading="lazy">` : '<span class="nu-ini">🥗</span>'}<div><b>${esc(n.nutri)}</b><small>Nutricionista</small></div></div>`).join('')}</div>` : '';
+    const bloque = (n, d) => {
+      const c = +n.cita || 0, a = toMin(n.desde), b = toMin(n.hasta), turnos = [];
+      if (c) for (let m = a; m + c <= b && turnos.length < 24; m += c) turnos.push(fromMin(m));
+      return `<div class="nu-blk"><div class="nu-hd"><b>${esc(hora12(n.desde))} – ${esc(hora12(n.hasta))}</b><span>${esc(n.modalidad || 'Presencial')}${sede === 'todas' ? ' · ' + esc(n.sede === 'todas' ? 'Todas las sedes' : sedeName(n.sede)) : ''}</span></div>${nutris.length > 1 ? `<small class="nu-who">con ${esc(n.nutri)}</small>` : ''}
+        ${turnos.length ? `<div class="nu-slots">${turnos.map((h) => `<button class="nu-slot" data-nutri="${esc(n.id)}" data-dia="${d}" data-h="${h}">${esc(hora12(h))}</button>`).join('')}</div>` : `<button class="btn btn-y btn-sm nu-go" data-nutri="${esc(n.id)}" data-dia="${d}">Separar cupo</button>`}
+        ${n.nota ? `<p class="nu-nota">${esc(n.nota)}</p>` : ''}</div>`;
+    };
+    const cols = DIAS_W.map(([d, nm]) => { const ns = all.filter((n) => (n.dias || []).includes(d)).sort((x, y) => String(x.desde).localeCompare(String(y.desde)));
+      return `<div class="cl-dia ${d === hoy ? 'hoy' : ''}" ${d === hoy ? 'id="clHoy"' : ''}><h4>${nm}${d === hoy ? ' <small>Hoy</small>' : ''}</h4>${ns.map((n) => bloque(n, d)).join('') || '<p class="cl-vacio">No atiende</p>'}</div>`; }).join('');
+    const pasos = `<div class="nu-pasos"><div><b>1</b>Elige el día y la hora que te quede mejor.</div><div><b>2</b>Se abre WhatsApp con tu mensaje listo para la sede.</div><div><b>3</b>Recepción te confirma tu cupo.</div></div>`;
+    return head('Incluida en tu plan', 'Asesoría', 'nutricional', 'Tu entrenamiento rinde el doble con una buena alimentación. Separa tu cita con nuestra nutricionista.', sedeChips()) +
+      `<section class="sec" style="padding-top:0"><div class="wrap">${pro}${pasos}${all.length ? `<div class="cl-week nu-week">${cols}</div>` : '<div class="empty">Pronto publicaremos los horarios de asesoría nutricional de esta sede.</div>'}</div></section>`;
   };
 
   // Acepta '@usuario', 'usuario' o un enlace de Instagram y devuelve solo el usuario.
@@ -488,13 +511,13 @@
     const y = scrollY, changed = route !== h; route = h;
     nav.classList.toggle('inner', key !== 'inicio');
     const tabKey = key === 'coach' ? 'coaches' : key;
-    $$('#tabs a,#bbar [data-r]').forEach((a) => a.classList.toggle('on', a.dataset.r === tabKey || (a.id === 'moreBtn' && ['clases', 'sedes', 'galeria', 'promos'].includes(tabKey))));
+    $$('#tabs a,#bbar [data-r]').forEach((a) => a.classList.toggle('on', a.dataset.r === tabKey || (a.id === 'moreBtn' && ['clases', 'nutricion', 'sedes', 'galeria', 'promos'].includes(tabKey))));
     moveInd();
     app.innerHTML = `<div class="page">${await P[key](arg)}</div>`;
-    document.title = (key === 'inicio' ? '' : ({ planes: 'Planes', coaches: 'Entrenadores', coach: 'Entrenador', clases: 'Horario de clases', cafetin: 'Cafetín fit', sedes: 'Sedes', galeria: 'Galería', promos: 'Promos' }[key] + ' · ')) + 'Santos Strength';
+    document.title = (key === 'inicio' ? '' : ({ planes: 'Planes', coaches: 'Entrenadores', coach: 'Entrenador', clases: 'Horario de clases', nutricion: 'Asesoría nutricional', cafetin: 'Cafetín fit', sedes: 'Sedes', galeria: 'Galería', promos: 'Promos' }[key] + ' · ')) + 'Santos Strength';
     if (changed && !keepScroll) scrollTo(0, 0); else scrollTo(0, y);
     afterRender();
-    if (key === 'clases' && innerWidth < 900) { const hc = $('#clHoy'); if (hc) hc.parentNode.scrollLeft = hc.offsetLeft - 16; }
+    if ((key === 'clases' || key === 'nutricion') && innerWidth < 900) { const hc = $('#clHoy'); if (hc) hc.parentNode.scrollLeft = hc.offsetLeft - 16; }
   }
   addEventListener('hashchange', () => { $('#moreSheet').classList.remove('on'); closeAll(); render(); });
 
@@ -558,6 +581,7 @@
     if ((el = t('[data-wa]'))) { e.preventDefault(); openSheet(el.dataset.plan, el.dataset.msg); return; }
     if ((el = t('[data-goal]'))) { renderQuiz(el.dataset.goal); return; }
     if ((el = t('[data-ctipo]'))) { claseTipo = el.dataset.ctipo; render(true); return; }
+    if ((el = t('[data-nutri]'))) { const n = (data.nutricion || []).find((x) => x.id === el.dataset.nutri); if (n) { const s = (n.sede && n.sede !== 'todas' && sedeObj(n.sede)) || waSede(), dn = (DIAS_W.find((x) => x[0] === el.dataset.dia) || [, ''])[1].toLowerCase(), cuando = el.dataset.h ? `el ${dn} a las ${hora12(el.dataset.h)}` : `el ${dn} (de ${hora12(n.desde)} a ${hora12(n.hasta)})`; open(SS.waLink(s.whatsapp, `Hola Santos Strength ${s.nombre} 👋 Quiero separar mi cupo para la asesoría nutricional ${cuando}${n.modalidad === 'Virtual' ? ' (virtual)' : ''}. ¿Está disponible?`), '_blank', 'noopener'); } return; }
     if ((el = t('[data-clase]'))) { const k = (data.clases || []).find((x) => x.id === el.dataset.clase); if (k) { const s = (k.sede && k.sede !== 'todas' && sedeObj(k.sede)) || waSede(), dn = (DIAS_W.find((x) => x[0] === el.dataset.dia) || [, ''])[1]; open(SS.waLink(s.whatsapp, `Hola Santos Strength 👋 Quiero separar mi cupo en la clase de ${k.nombre} del ${dn.toLowerCase()} a las ${hora12(k.hora)} (sede ${s.nombre}).`), '_blank', 'noopener'); } return; }
     if ((el = t('[data-cat]'))) { cat = el.dataset.cat; render(true); return; }
     if ((el = t('[data-combo]'))) { openCombo(el.dataset.combo); return; }

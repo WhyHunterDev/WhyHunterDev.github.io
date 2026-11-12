@@ -111,6 +111,11 @@
         { id: 'k3', nombre: 'Crossfit', tipo: 'Crossfit', coach: 'c3', profe: '', sede: 'vmt', dias: ['lun', 'mie', 'vie'], hora: '18:30', duracion: 60, nota: 'Cupos limitados', activo: true },
         { id: 'k4', nombre: 'Cardio intenso', tipo: 'Cardio', coach: 'c4', profe: '', sede: 'vmt', dias: ['mar', 'jue', 'sab'], hora: '08:00', duracion: 45, nota: '', activo: true }
       ],
+      nutricion: [
+        { id: 'n1', nutri: 'Lic. Carla Rojas', foto: '', sede: 'manchay', dias: ['lun', 'mie', 'vie'], desde: '08:00', hasta: '12:00', cita: 30, modalidad: 'Presencial', nota: 'Trae tu última evaluación si la tienes', activo: true },
+        { id: 'n2', nutri: 'Lic. Carla Rojas', foto: '', sede: 'vmt', dias: ['mar', 'jue'], desde: '16:00', hasta: '20:00', cita: 30, modalidad: 'Presencial', nota: '', activo: true },
+        { id: 'n3', nutri: 'Lic. Carla Rojas', foto: '', sede: 'todas', dias: ['sab'], desde: '09:00', hasta: '11:00', cita: 30, modalidad: 'Virtual', nota: 'Por videollamada', activo: true }
+      ],
       galeria: [
         { id: 'r9', media: 'vid/r9.mp4', poster: 'vid/r9.jpg', mediaTipo: 'video', sede: 'todas', categoria: 'Tips', titulo: '¿Qué te hace realmente fuerte?', estado: 'publicado', destacado: true },
         { id: 'r4', media: 'vid/r4.mp4', poster: 'vid/r4.jpg', mediaTipo: 'video', sede: 'manchay', categoria: 'Sedes', titulo: 'Cómo llegar a Manchay', estado: 'publicado', destacado: true },
@@ -154,7 +159,7 @@
   const passOK = (p) => p.length >= 8 && /[A-Za-z]/.test(p) && /\d/.test(p);
 
   // Claves de contenido que viven en la nube (tabla 'contenido').
-  const CLAVES = ['config', 'sedes', 'planes', 'pase', 'notaPlanes', 'entrenadores', 'clases', 'cafetin', 'publicaciones', 'galeria'];
+  const CLAVES = ['config', 'sedes', 'planes', 'pase', 'notaPlanes', 'entrenadores', 'clases', 'nutricion', 'cafetin', 'publicaciones', 'galeria'];
   const B = () => window.SS_BACKEND;
 
   async function load() {
