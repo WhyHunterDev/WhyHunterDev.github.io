@@ -164,7 +164,8 @@ const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelecto
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const soles=n=>'S/ '+(+n||0).toLocaleString('es-PE');
 const fecha=t=>t?new Date(t).toLocaleString('es-PE',{dateStyle:'medium',timeStyle:'short'}):'';
-const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2600);};
+const toast=m=>{ if(/row-level security|permission denied for|jwt|not authenticated/i.test(String(m))){ m='Se venció tu sesión. Renovándola… vuelve a intentarlo.'; (async()=>{ try{ const {data}=await sb.auth.getSession(); if(!data||!data.session) sesionPerdida(); else await sb.auth.refreshSession(); }catch(_){ sesionPerdida(); } })(); }
+  const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2600);};
 const show=id=>['login','loading','nocfg','app'].forEach(s=>{const el=$('#'+s);el.style.display=s===id?(s==='app'?'grid':(s==='login'?'':'grid')):'none';});
 
 // Sin backend configurado → avisa y detente.
@@ -231,7 +232,7 @@ $('#lf').addEventListener('submit', async e=>{
   const email=$('#em').value.trim(), pass=$('#pw').value;
   $('#lbtn').disabled=true;
   try{
-    const perfil=await AUTH.entrar(email,pass);
+    const perfil=await AUTH.entrar(email,pass); sesionPerdida.on=false;
     if(!perfil||perfil.rol!=='gestor'){ await AUTH.salir(); throw new Error('Esta cuenta no tiene acceso de gestor.'); }
     me={id:perfil.id,nombre:perfil.nombre||'Gestor',email};
     $('#pw').value=''; await start();
@@ -251,12 +252,14 @@ function traducir(m){ m=(m||'').toLowerCase();
   if(m.includes('rate')||m.includes('too many')) return 'Demasiados intentos. Espera un momento.';
   return m.charAt(0).toUpperCase()+m.slice(1); }
 
-async function logout(){ await AUTH.salir(); me=null; show('login'); }
+async function logout(){ me=null; await AUTH.salir(); show('login'); }
 
 // Recuperación: si el usuario llega desde el correo, Supabase emite PASSWORD_RECOVERY.
 sb.auth.onAuthStateChange((ev)=>{ if(ev==='PASSWORD_RECOVERY'){ recovery=true; } });
 /* Sesión del gestor siempre activa: renueva el acceso antes de que venza, también al volver a la ventana o tras suspender la PC. */
-const mantenerSesion=async()=>{ try{ const {data}=await sb.auth.getSession(); const ses=data&&data.session; if(ses&&ses.expires_at*1000-Date.now()<10*60e3) await sb.auth.refreshSession(); }catch(_){} };
+const mantenerSesion=async()=>{ try{ await sb.auth.getSession(); }catch(_){} }; // getSession renueva sola si hace falta (sin carreras)
+function sesionPerdida(){ if(!me||sesionPerdida.on) return; sesionPerdida.on=true; show('login'); const e=$('#err'); if(e){ e.textContent='Tu sesión se cerró (quizá entraste desde otra ventana). Vuelve a entrar.'; e.hidden=false; } }
+sb.auth.onAuthStateChange((ev,ses)=>{ if(ev==='SIGNED_IN') sesionPerdida.on=false; if(ev==='SIGNED_OUT'||(ev==='TOKEN_REFRESHED'&&!ses)) sesionPerdida(); });
 setInterval(mantenerSesion,4*60e3);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ try{ sb.auth.startAutoRefresh&&sb.auth.startAutoRefresh(); }catch(_){} mantenerSesion(); } });
 addEventListener('focus',mantenerSesion); addEventListener('online',mantenerSesion);
