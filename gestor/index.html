@@ -115,6 +115,21 @@ th{color:var(--mu);font-size:.66rem;letter-spacing:.08em;text-transform:uppercas
 .row-sw{display:flex;align-items:center;gap:.7rem;cursor:pointer}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(120px);background:linear-gradient(135deg,var(--ac),#9d7bff);color:#fff;font-weight:650;padding:.75rem 1.2rem;border-radius:12px;transition:transform .35s;z-index:99;max-width:90vw;box-shadow:0 18px 40px -14px rgba(124,108,255,.8)}
 .toast.on{transform:translateX(-50%)}
+.fhead{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:18px 20px;border:1px solid var(--line);border-radius:18px;background:radial-gradient(120% 140% at 0% 0%,rgba(124,108,255,.16),transparent 60%),var(--card);margin-bottom:12px}
+.fav{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-weight:900;font-size:1.5rem;color:#fff;background:linear-gradient(135deg,var(--ac),#9d7bff);box-shadow:0 10px 26px -10px rgba(124,108,255,.8);flex:none}
+.fti{flex:1;min-width:200px}.fti h2{font-size:1.25rem;line-height:1.2}.fti small{color:var(--mu);font-size:.82rem}
+.fchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.fchip{font-size:.72rem;font-weight:700;padding:.25rem .6rem;border-radius:999px;color:var(--c);background:color-mix(in srgb,var(--c) 12%,transparent);border:1px solid color-mix(in srgb,var(--c) 30%,transparent)}
+.facts{display:flex;gap:8px;flex-wrap:wrap}.facts a{color:var(--tx);text-decoration:none}
+.ftabs{position:sticky;top:0;z-index:5;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:6px;margin-bottom:14px;border:1px solid var(--line);border-radius:14px;background:rgba(11,11,18,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.ftabs::-webkit-scrollbar{display:none}
+.ftabs button{flex:none;padding:.55rem .9rem;border-radius:10px;font-size:.84rem;font-weight:600;color:var(--mu);white-space:nowrap;transition:.15s}
+.ftabs button:hover{color:var(--tx);background:rgba(255,255,255,.04)}
+.ftabs button.on{color:#fff;background:linear-gradient(135deg,var(--ac),#9d7bff);box-shadow:0 8px 20px -10px rgba(124,108,255,.9)}
+.ftabs i{font-style:normal;font-family:var(--mono);font-size:.7rem;background:rgba(255,255,255,.12);padding:.05rem .4rem;border-radius:99px;margin-left:2px}
+.fbody .ftab{display:none;animation:fIn .25s ease}
+.fbody[data-cur="resumen"] [data-ft="resumen"],.fbody[data-cur="datos"] [data-ft="datos"],.fbody[data-cur="tema"] [data-ft="tema"],.fbody[data-cur="manto"] [data-ft="manto"],.fbody[data-cur="cuentas"] [data-ft="cuentas"],.fbody[data-cur="uso"] [data-ft="uso"],.fbody[data-cur="versiones"] [data-ft="versiones"]{display:block}
+@keyframes fIn{from{opacity:0;transform:translateY(6px)}}
 .back{color:var(--mu);font-size:.85rem;margin-bottom:12px;display:inline-flex;gap:.4rem;cursor:pointer}
 .menuBtn{display:none}
 .empty{color:var(--mu);text-align:center;padding:30px}
@@ -173,7 +188,7 @@ const show=id=>['login','loading','nocfg','app'].forEach(s=>{const el=$('#'+s);e
 if (!window.SS_BACKEND) { show('nocfg'); return; }
 const sb = window.SS_BACKEND.sb, AUTH = window.SS_BACKEND.auth;
 
-let me=null, clientes=[], view='resumen', editing=null, recovery=false;
+let me=null, clientes=[], view='resumen', editing=null, recovery=false, fichaTab='resumen', fichaInfo=null;
 const CFG='gestor-cfg', LOG='gestor-log';
 const cfg=()=>{try{return JSON.parse(localStorage.getItem(CFG))||{soporteSinRegistro:true};}catch(_){return{soporteSinRegistro:true};}};
 const setCfg=o=>{try{localStorage.setItem(CFG,JSON.stringify(o));}catch(_){}}
@@ -312,10 +327,25 @@ async function clForm(){
   const n=editing==='new', cl=n?{negocio:'',rubro:'',estado:'activo',contacto:'',telefono:'',url:'',panel:'',costo:'',soporte:'',pago:'pendiente',ciclo:'mensual',entregado:new Date().toISOString().slice(0,10),notas:'',versiones:[]}:structuredClone(clientes.find(c=>c.id===editing));
   const F=[['negocio','Negocio / empresa','text',1],['rubro','Rubro','text'],['estado','Estado','sel',0,estados],['pago','Pago','sel',0,[['pendiente','Por cobrar'],['pagado','Pagado']]],['contacto','Contacto','text'],['telefono','Teléfono / WhatsApp','text'],['url','URL de la web','url'],['panel','URL del panel','url'],['costo','Costo cobrado (S/)','num'],['soporte','Soporte (S/)','num'],['ciclo','Ciclo de soporte','sel',0,[['mensual','Mensual'],['anual','Anual'],['unico','Pago único'],['ninguno','Sin soporte']]],['entregado','Fecha de entrega','date']];
   const fld=([k,l,t,full,opts])=>t==='sel'?`<label class="${full?'full':''}">${l}<select data-k="${k}">${opts.map(([a,b])=>`<option value="${a}" ${a===cl[k]?'selected':''}>${b}</option>`).join('')}</select></label>`:`<label class="${full?'full':''}">${l}<input type="${t==='num'?'number':t}" ${t==='num'?'step="any" min="0"':''} data-k="${k}" value="${esc(cl[k])}"></label>`;
-  return`<a class="back" data-cancel>← Volver</a><div class="panel"><h3>${n?'Nuevo cliente':'Editar '+esc(cl.negocio)}</h3>
+  const datos=`<div class="panel"><h3>${n?'Nuevo cliente':'Datos del cliente'}</h3>
     <form class="form" id="cf">${F.map(fld).join('')}<label class="full">Notas<textarea data-k="notas" rows="3">${esc(cl.notas)}</textarea></label></form>
-    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn btn-p" data-save>Guardar</button><a class="btn btn-g" data-cancel>Cancelar</a>${!n?`<button class="btn btn-bad" data-del="${cl.id}" style="margin-left:auto">Eliminar</button>`:''}</div></div>
-    ${!n?await verPanel(cl):''}`;
+    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn btn-p" data-save>Guardar</button><a class="btn btn-g" data-cancel>Cancelar</a>${!n?`<button class="btn btn-bad" data-del="${cl.id}" style="margin-left:auto">Eliminar</button>`:''}</div></div>`;
+  if(n) return `<a class="back" data-cancel>← Volver</a>${datos}`;
+  const resto=await verPanel(cl), fi=fichaInfo||{}, cf=fi.cf;
+  const tel=String(cl.telefono||'').replace(/\D/g,''), wa=tel?(tel.length===9?'51'+tel:tel):'';
+  const chip=(t,c)=>`<span class="fchip" style="--c:${c}">${t}</span>`;
+  const chips=[cl.pago==='pagado'?chip('✅ Pagado','var(--ok)'):chip('🟠 Por cobrar','var(--warn)'),
+    fi.slug?(cf&&cf.mantenimiento?chip('🛠️ Mantenimiento','var(--warn)'):chip('🟢 Web en vivo','var(--ok)')):chip('Sin URL','var(--mu)'),
+    cf&&cf.tema?chip(TEMA_NOM[cf.tema]||cf.tema,'var(--ac)'):'',
+    cl.soporte?chip(`S/ ${esc(cl.soporte)} ${cl.ciclo==='anual'?'/año':cl.ciclo==='mensual'?'/mes':''}`,'var(--ac2)'):''].join('');
+  const TABS=[['resumen','📊','Resumen'],['datos','📝','Datos'],['tema','🎨','Tema'],['manto','🛠️','Mantenimiento'],['cuentas','👥','Cuentas',fi.nU],['uso','💾','Uso'],['versiones','🕑','Versiones',fi.nV]];
+  if(!TABS.some(t=>t[0]===fichaTab)) fichaTab='resumen';
+  return `<a class="back" data-cancel>← Volver a clientes</a>
+    <div class="fhead"><div class="fav">${esc((cl.negocio||'?').trim().charAt(0).toUpperCase())}</div>
+      <div class="fti"><h2>${esc(cl.negocio)}</h2><small>${esc(cl.rubro||'Cliente')}${cl.contacto?' · '+esc(cl.contacto):''}</small><div class="fchips">${chips}</div></div>
+      <div class="facts">${cl.url?`<a class="btn btn-g btn-sm" href="${esc(cl.url)}" target="_blank" rel="noopener">🌐 Web ↗</a>`:''}${cl.panel?`<a class="btn btn-g btn-sm" href="${esc(cl.panel)}" target="_blank" rel="noopener">🔐 Panel ↗</a>`:''}${wa?`<a class="btn btn-g btn-sm" href="https://wa.me/${wa}" target="_blank" rel="noopener">💬 WhatsApp</a>`:''}</div></div>
+    <nav class="ftabs">${TABS.map(([k,e,t,b])=>`<button data-ftab="${k}" class="${k===fichaTab?'on':''}">${e} ${t}${b?` <i>${b}</i>`:''}</button>`).join('')}</nav>
+    <div class="fbody" data-cur="${fichaTab}"><section class="ftab" data-ft="datos">${datos}</section>${resto}</div>`;
 }
 const TEMA_NOM={'':'Normal','navidad':'🎄 Navidad','halloween':'🎃 Halloween','anionuevo':'🎆 Año Nuevo','fiestaspatrias':'🎊 Fiestas Patrias','sanvalentin':'❤️ San Valentín'};
 async function leerSitio(slug){
@@ -373,20 +403,21 @@ async function verPanel(cl){
   let cu=null, cuErr=null; if(slug){ try{ cu=await leerCuentas(slug); }catch(ex){ cuErr=ex; } }
   let uso=null; if(slug){ try{ uso=await leerUso(slug); }catch(_){} }
   const estado = slug ? (estErr?'<div class="panel"><h3>Estado del cliente</h3><div class="note">No pude leer el estado de la web ahora. Revisa la URL o inténtalo de nuevo.</div></div>':(estadoPanel(cl,cf)+(info?estadisticasPanel(info):''))) : '';
-  return estado+`<div class="panel"><h3>Tema de la web <span class="tag x">Extra · cóbralo</span></h3><p class="d">Cambia el look de temporada de la web de este cliente al instante. Ideal para vender como adicional.</p>
-    ${slug?`<div class="temas">${TEMAS.map(([k,n,emo])=>`<button class="tema" data-tema="${esc(slug)}:${esc(k)}"><b>${emo}</b> ${esc(n)}</button>`).join('')}</div><label style="display:block;margin-top:12px;color:var(--mu);font-size:.8rem;font-weight:600">Promoción (opcional)<input id="promoTxt" type="text" maxlength="90" value="${esc((cf&&cf.temaPromo)||'')}" placeholder="Ej: 2×1 en inscripción solo diciembre" style="margin-top:5px"></label><label style="display:block;margin-top:12px;color:var(--mu);font-size:.8rem;font-weight:600">Título de la tarjeta (opcional)<input id="promoTit" type="text" maxlength="50" value="${esc((cf&&cf.temaTitulo)||'')}" placeholder="Ej: Regálate tu mejor versión" style="margin-top:5px"></label><label style="display:block;margin-top:12px;color:var(--mu);font-size:.8rem;font-weight:600">Termina el (cuenta regresiva)<input id="promoHasta" type="date" value="${esc((cf&&cf.temaHasta)||'')}" style="margin-top:5px"></label><button class="tema save" data-savepromo="${esc(slug)}" style="margin-top:10px">💾 Guardar promo</button><p class="d" style="margin-top:6px">Vacío = texto y fecha por defecto de cada temporada. La web muestra efectos animados, cinta con cuenta regresiva y una tarjeta de promo con botón a WhatsApp.</p><div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px"><h4 style="font-size:.92rem;margin-bottom:4px">Temas que puede usar el cliente <span class="tag x">Cobra por cada uno</span></h4><p class="d">Activa los temas que el cliente pagó. Solo esos le aparecerán en su panel para ponerlos él mismo cuando quiera.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${TEMAS.filter(([k])=>k).map(([k,n,emo])=>{const on=((cf&&cf.temasPermitidos)||[]).includes(k);return `<button class="tema${on?' save':''}" data-togtema="${esc(slug)}:${esc(k)}" style="${on?'border-color:var(--ok);color:var(--ok)':''}">${on?'✅':'➕'} ${emo} ${esc(n)}</button>`;}).join('')}</div></div>`:'<div class="note">Pon la <b>URL de la web</b> del cliente arriba y guarda, para poder aplicar temas.</div>'}</div>
-    ${slug?`<div class="panel"><h3>Modo mantenimiento</h3><p class="d">Muestra una página de "volvemos pronto" mientras haces cambios. Actívalo, trabaja tranquilo, y apágalo cuando esté listo.</p>
+  fichaInfo={cf,slug,nU:cu&&cu.users?cu.users.length:null,nV:vs.length};
+  return `<section class="ftab" data-ft="resumen">${estado||'<div class="note">Pon la <b>URL de la web</b> en Datos para ver el estado y las estadísticas.</div>'}</section><section class="ftab" data-ft="tema"><div class="panel"><h3>Tema de la web <span class="tag x">Extra · cóbralo</span></h3><p class="d">Cambia el look de temporada de la web de este cliente al instante. Ideal para vender como adicional.</p>
+    ${slug?`<div class="temas">${TEMAS.map(([k,n,emo])=>`<button class="tema" data-tema="${esc(slug)}:${esc(k)}"><b>${emo}</b> ${esc(n)}</button>`).join('')}</div><label style="display:block;margin-top:12px;color:var(--mu);font-size:.8rem;font-weight:600">Promoción (opcional)<input id="promoTxt" type="text" maxlength="90" value="${esc((cf&&cf.temaPromo)||'')}" placeholder="Ej: 2×1 en inscripción solo diciembre" style="margin-top:5px"></label><label style="display:block;margin-top:12px;color:var(--mu);font-size:.8rem;font-weight:600">Título de la tarjeta (opcional)<input id="promoTit" type="text" maxlength="50" value="${esc((cf&&cf.temaTitulo)||'')}" placeholder="Ej: Regálate tu mejor versión" style="margin-top:5px"></label><label style="display:block;margin-top:12px;color:var(--mu);font-size:.8rem;font-weight:600">Termina el (cuenta regresiva)<input id="promoHasta" type="date" value="${esc((cf&&cf.temaHasta)||'')}" style="margin-top:5px"></label><button class="tema save" data-savepromo="${esc(slug)}" style="margin-top:10px">💾 Guardar promo</button><p class="d" style="margin-top:6px">Vacío = texto y fecha por defecto de cada temporada. La web muestra efectos animados, cinta con cuenta regresiva y una tarjeta de promo con botón a WhatsApp.</p><div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px"><h4 style="font-size:.92rem;margin-bottom:4px">Temas que puede usar el cliente <span class="tag x">Cobra por cada uno</span></h4><p class="d">Activa los temas que el cliente pagó. Solo esos le aparecerán en su panel para ponerlos él mismo cuando quiera.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${TEMAS.filter(([k])=>k).map(([k,n,emo])=>{const on=((cf&&cf.temasPermitidos)||[]).includes(k);return `<button class="tema${on?' save':''}" data-togtema="${esc(slug)}:${esc(k)}" style="${on?'border-color:var(--ok);color:var(--ok)':''}">${on?'✅':'➕'} ${emo} ${esc(n)}</button>`;}).join('')}</div></div>`:'<div class="note">Pon la <b>URL de la web</b> del cliente en Datos y guarda, para poder aplicar temas.</div>'}</div></section>
+    <section class="ftab" data-ft="manto">${slug?`<div class="panel"><h3>Modo mantenimiento</h3><p class="d">Muestra una página de "volvemos pronto" mientras haces cambios. Actívalo, trabaja tranquilo, y apágalo cuando esté listo.</p>
       <div style="margin-bottom:10px">Estado actual: ${cf&&cf.mantenimiento?'<b style="color:var(--warn)">🛠️ En mantenimiento</b>':'<b style="color:var(--ok)">✅ En vivo</b>'}</div>
       <label style="display:block;color:var(--mu);font-size:.8rem;font-weight:600">Título (opcional)<input id="mantTit" type="text" maxlength="60" value="${esc((cf&&cf.manto&&cf.manto.titulo)||'')}" placeholder="Estamos mejorando la web" style="margin-top:5px"></label>
       <label style="display:block;color:var(--mu);font-size:.8rem;font-weight:600;margin-top:10px">Mensaje (opcional)<input id="mantMsg" type="text" maxlength="140" value="${esc((cf&&cf.manto&&cf.manto.msg)||'')}" placeholder="Volvemos en un momento. ¡Gracias por tu paciencia!" style="margin-top:5px"></label>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="tema" data-manto="${esc(slug)}:1">🛠️ Activar mantenimiento</button><button class="tema" data-manto="${esc(slug)}:0">✅ Poner la web en vivo</button></div></div>`:''}
-    ${slug?cuentasPanel(slug,cu,cuErr):''}
-    ${slug?usoPanel(slug,uso):''}
-    <div class="panel"><h3>Versiones y cambios</h3><p class="d">Guarda un punto antes de cada cambio grande para poder volver atrás.</p>
-    <form class="form" id="vf" style="margin-bottom:14px"><label class="full">Describe el cambio<input data-k="etq" placeholder="Ej.: Nueva promo de verano"></label><label class="full">Nota (opcional)<input data-k="nota"></label><button class="btn btn-g" data-ver="${cl.id}" type="button" style="width:fit-content">＋ Guardar versión actual</button></form>
-    ${vs.map((v,i)=>`<div class="ver ${i===0?'now':''}"><span class="dot"></span><div class="vi"><b>${esc(v.etq)}</b>${i===0?' <span class="tag activo">Actual</span>':''}<br><small>${fecha(v.t)}${v.nota?' · '+esc(v.nota):''}</small></div>${i>0?`<button class="btn btn-g btn-sm" data-rollback="${cl.id}:${v.id}">Volver a esta</button>`:''}</div>`).join('')||'<small style="color:var(--mu)">Sin versiones guardadas.</small>'}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="tema" data-manto="${esc(slug)}:1">🛠️ Activar mantenimiento</button><button class="tema" data-manto="${esc(slug)}:0">✅ Poner la web en vivo</button></div></div>`:'<div class="note">Pon la URL de la web en Datos.</div>'}</section>
+    <section class="ftab" data-ft="cuentas">${slug?cuentasPanel(slug,cu,cuErr):'<div class="note">Pon la URL de la web en Datos.</div>'}</section>
+    <section class="ftab" data-ft="uso">${slug?usoPanel(slug,uso):''}
     <div class="panel"><h3>Base de datos</h3><p class="d">Esta web ya guarda sus datos en Supabase (la nube). Desde aquí abres su panel para darle soporte.</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">${cl.panel?`<a class="btn btn-g btn-sm" href="${esc(cl.panel)}" target="_blank" rel="noopener">Abrir panel del cliente ↗</a>`:''}<button class="btn btn-g btn-sm" data-export="${cl.id}">Exportar ficha (JSON)</button></div></div>`;
+      <div style="display:flex;gap:8px;flex-wrap:wrap">${cl.panel?`<a class="btn btn-g btn-sm" href="${esc(cl.panel)}" target="_blank" rel="noopener">Abrir panel del cliente ↗</a>`:''}<button class="btn btn-g btn-sm" data-export="${cl.id}">Exportar ficha (JSON)</button></div></div></section>
+    <section class="ftab" data-ft="versiones"><div class="panel"><h3>Versiones y cambios</h3><p class="d">Guarda un punto antes de cada cambio grande para poder volver atrás.</p>
+    <form class="form" id="vf" style="margin-bottom:14px"><label class="full">Describe el cambio<input data-k="etq" placeholder="Ej.: Nueva promo de verano"></label><label class="full">Nota (opcional)<input data-k="nota"></label><button class="btn btn-g" data-ver="${cl.id}" type="button" style="width:fit-content">＋ Guardar versión actual</button></form>
+    ${vs.map((v,i)=>`<div class="ver ${i===0?'now':''}"><span class="dot"></span><div class="vi"><b>${esc(v.etq)}</b>${i===0?' <span class="tag activo">Actual</span>':''}<br><small>${fecha(v.t)}${v.nota?' · '+esc(v.nota):''}</small></div>${i>0?`<button class="btn btn-g btn-sm" data-rollback="${cl.id}:${v.id}">Volver a esta</button>`:''}</div>`).join('')||'<small style="color:var(--mu)">Sin versiones guardadas.</small>'}</div></section>`;
 }
 let ultimaClave=null;
 const ROLES_U=[['admin','Administrador'],['recepcion','Recepción'],['cafetin','Cafetín']];
@@ -580,8 +611,9 @@ document.addEventListener('click', async e=>{
     if(el.id==='mb')return $('#side').classList.toggle('open');
     if(el.id==='swSop'){const c=cfg();c.soporteSinRegistro=!c.soporteSinRegistro;setCfg(c);return go('soporte');}
     if(d.flt){flt=d.flt;return go('clientes');}
+    if(d.ftab){ fichaTab=d.ftab; $$('.ftabs button').forEach(b=>b.classList.toggle('on',b.dataset.ftab===fichaTab)); $('.fbody').dataset.cur=fichaTab; return; }
     if('new'in d){editing='new';return go('clientes');}
-    if(d.open){editing=d.open;view='clientes';return go('clientes');}
+    if(d.open){editing=d.open;fichaTab='resumen';view='clientes';return go('clientes');}
     if('cancel'in d){editing=null;return go('clientes');}
     if('save'in d){ const o=collect($('#cf')); if(!o.negocio)return toast('Ponle nombre al negocio');
       if(editing==='new'){ o.versiones=[{id:crypto.randomUUID(),t:Date.now(),etq:'Alta del cliente',nota:''}]; }
