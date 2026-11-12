@@ -459,7 +459,7 @@
 
   function applyTema() {
     const c = data.config, t = (c.tema || '').toLowerCase(), cfg = TEMAS[t], root = document.documentElement;
-    root.dataset.tema = cfg ? t : '';
+    if (cfg) root.dataset.tema = t; else root.removeAttribute('data-tema');
     ['#temaDeco', '#temaRibbon', '#temaLights', '#temaPop', '#temaBadge'].forEach((s) => $(s)?.remove());
     if (fxStop) { fxStop(); fxStop = null; } clearInterval(cdTimer);
     if (!cfg) { root.removeAttribute('data-ribbon'); root.style.removeProperty('--tema-tag'); return; }
