@@ -163,6 +163,15 @@
     me = u; sessionStorage.setItem('ss-ses', JSON.stringify({ id: u.id, t: Date.now() }));
     $('#pw').value = ''; err.hidden = true; start();
   });
+  // Xyro Apps (lo activa XyroStudio): entra con un clic usando un pase de un solo uso.
+  async function abrirXyroApps() {
+    const base = 'https://xyrostudio.net/app/?s=' + encodeURIComponent((B() && B().sitio) || 'santos-strength') + '&e=' + encodeURIComponent(me.email || '');
+    const w = window.open('about:blank', '_blank');
+    let url = base;
+    try { if (B()) { const { data: c } = await B().sb.rpc('xa_pase'); if (c) url += '#xa=' + c; } } catch (_) {}
+    if (w) { try { w.opener = null; } catch (_) {} w.location.href = url; } else location.href = url;
+    log('abrió Xyro Apps');
+  }
   async function logout(msg) { if (B()) { try { await B().auth.salir(); } catch (_) {} } sessionStorage.removeItem('ss-ses'); me = null; $('#app').style.display = 'none'; $('#login').style.display = ''; if (msg) { $('#err').textContent = msg; $('#err').hidden = false; } }
   // Recuperación de contraseña por correo (solo en modo nube).
   const forgotBtn = $('#forgotLink');
@@ -188,7 +197,7 @@
     const pend = isAdmin() ? data.publicaciones.filter((p) => p.estado === 'pendiente').length + data.galeria.filter((g) => g.estado === 'pendiente').length : 0;
     $('#side').innerHTML = `<div class="brand disp"><img src="img/logo-sm.webp" alt=""><span>Santos <b>Panel</b></span></div>` +
       NAV.map(([g, it]) => { const v = it.filter((i) => can(i[3])); return v.length ? `<div class="grp">${g}</div>` + v.map(([id, ic, n]) => `<button class="nv ${id === view ? 'on' : ''}" data-v="${id}">${ic} ${n}${id === 'resumen' && pend ? `<span class="ct">${pend}</span>` : ''}</button>`).join('') : ''; }).join('') +
-      `<a class="nv" href="index.html" target="_blank" rel="noopener">🌐 Ver página web</a>
+      `${((data.config && data.config.xyros) || []).includes('apps') && ['admin', 'recepcion', 'cafetin'].includes(me.rol) ? '<button class="nv" data-xapps>📱 Abrir Xyro Apps ↗</button>' : ''}<a class="nv" href="index.html" target="_blank" rel="noopener">🌐 Ver página web</a>
       <div class="me"><b>${esc(me.nombre)}</b><small>${esc(me.gestor ? 'Gestor (agencia)' : rolLabel[me.rol])} · ${esc(sedeName(me.sede))}</small><button class="btn btn-g btn-sm" data-logout style="margin-top:10px;width:100%">Cerrar sesión</button></div>`;
   }
   async function go(v) {
@@ -448,6 +457,7 @@
     try {
       if (d.v) return go(d.v);
       if (d.xup) { const x = XYROS.find((y) => y[0] === d.xup); log('pidió ' + x[1]); open('https://wa.me/51936449066?text=' + encodeURIComponent(`Hola XyroStudio, quiero sumar ${x[1]} a Santos Strength.`), '_blank', 'noopener'); return toast('Te contactamos pronto ✓'); }
+      if ('xapps' in d) return abrirXyroApps();
       if ('logout' in d) return logout();
       if (el.id === 'menuBtn') return $('#side').classList.toggle('open');
       if ('clear' in d) { const w = el.previousElementSibling; $('input[type=hidden]', w).value = '[]'; $('.pv', w).innerHTML = ''; el.remove(); return; }
