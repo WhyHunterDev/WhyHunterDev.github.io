@@ -581,3 +581,9 @@ button.combo:hover{transform:translateY(-2px);box-shadow:0 14px 30px -14px rgba(
 @media(max-width:900px){.cl-week{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;margin-left:-16px;margin-right:-16px;padding:0 16px 8px}.cl-dia{flex:0 0 72%;scroll-snap-align:start}}
 .clase .cp{display:flex;align-items:center;gap:7px;margin-top:3px}.clase .cp img{width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid var(--y);flex:none}
 .legal a{color:inherit;text-decoration:underline;text-underline-offset:3px}.legal .libro{display:inline-flex;align-items:center;gap:4px;font-weight:700;color:var(--y);text-decoration:none}
+/* nav compacto en laptops y tablets horizontales */
+@media(min-width:901px) and (max-width:1320px){.brand span{display:none}.tabs a{padding:.5rem .7rem;font-size:.82rem}.navr .btn{padding-inline:1.1rem}}
+@media(min-width:901px) and (max-width:1120px){.sedepill #sedePillTx{display:none}.sedepill{padding:.6rem .7rem}.tabs a{padding:.5rem .55rem;font-size:.8rem}}
+/* portada: que el título no choque con el menú en laptops de poca altura */
+@media(min-width:901px){.hero{padding-top:calc(var(--nav) + 24px)}.hero h1{font-size:clamp(4rem,min(14vw,19vh),11.5rem)}}
+@media(min-width:901px){html[data-ribbon] .hero{padding-top:calc(var(--nav) + var(--rh,40px) + 24px)}html[data-ribbon] .hero h1{font-size:clamp(4rem,min(14vw,16.5vh),11.5rem)}}

@@ -73,7 +73,7 @@
     if (!a) { ind.style.width = '0'; return; }
     ind.style.left = a.offsetLeft + 'px'; ind.style.width = a.offsetWidth + 'px';
   }
-  addEventListener('resize', moveInd);
+  addEventListener('resize', moveInd); document.fonts && document.fonts.ready.then(moveInd);
 
   // ---------- Helpers de UI ----------
   const head = (eyebrow, t, acc, txt, extra = '') => `<header class="phead"><div class="wrap"><span class="eyebrow">${esc(eyebrow)}</span><h1 class="h1">${esc(t)} <em>${esc(acc)}</em></h1>${txt ? `<p class="lead">${esc(txt)}</p>` : ''}${extra}</div></header>`;
