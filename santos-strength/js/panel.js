@@ -179,6 +179,7 @@
     ['Página web', [['contenido', '🎨', 'Contenido de inicio', 'admin'], ['planes', '💳', 'Planes y precios', 'admin'], ['sedes', '📍', 'Sedes', 'admin']]],
     ['Publicar', [['promos', '📣', 'Promos y eventos', 'admin,recepcion'], ['galeria', '🎬', 'Galería', 'admin,recepcion'], ['clases', '🗓️', 'Horario de clases', 'admin,recepcion'], ['nutricion', '🥗', 'Asesoría nutricional', 'admin,recepcion'], ['coaches', '🏋️', 'Entrenadores', 'admin'], ['cafetin', '🥤', 'Cafetín', 'admin,cafetin']]],
     ['Equipo', [['usuarios', '👥', 'Usuarios', 'admin'], ['actividad', '🕑', 'Actividad', 'admin'], ['reclamos', '📕', 'Libro de reclamaciones', 'admin']]],
+    ['XyroStudio', [['xyros', '🚀', 'Haz crecer tu negocio', 'admin']]],
     ['Ayuda', [['guia', '📘', 'Guía de uso', 'all'], ['cuenta', '🔑', 'Mi cuenta', 'all']]]
   ];
   const can = (r) => r === 'all' || r.split(',').includes(me.rol);
@@ -408,6 +409,16 @@
     <div class="panel" style="max-width:520px"><h3>Cambiar contraseña</h3><p class="d">Mínimo 8 caracteres, con letras y números. No la compartas con nadie.</p>
     <form class="form" id="pwf" style="grid-template-columns:1fr">${B() ? '' : '<label>Contraseña actual<input type="password" id="p0" autocomplete="current-password" required></label>'}<label>Nueva contraseña<input type="password" id="p1" autocomplete="new-password" required></label><label>Repite la nueva<input type="password" id="p2" autocomplete="new-password" required></label><button class="btn btn-y">Guardar contraseña</button></form></div>
     ${B() ? `<div class="panel" style="max-width:520px"><h3>Acceso</h3><p class="d">Tu acceso es <b>${esc(me.email)}</b>. Si olvidas tu contraseña, usa «¿Olvidaste tu contraseña?» en la pantalla de inicio.</p></div>` : ''}`;
+  // Xyros: lo que ya tiene (config.xyros, lo activa XyroStudio) y lo que puede sumar.
+  const XYROS = [['webs', 'Xyro Webs', 'Tu web y este panel editable', 'webs'], ['apps', 'Xyro Apps', 'Membresías, cobros automáticos y recordatorios', 'apps'], ['control', 'Xyro Control', 'Caja, inventario del cafetín, asistencia y reportes', 'control'], ['bots', 'Xyro Bots', 'WhatsApp que responde, agenda y vende 24/7', 'bots'], ['edits', 'Xyro Edits', 'Reels y videos con IA para tus redes', 'edits']];
+  V.xyros = async () => {
+    const act = (data.config && data.config.xyros) || ['webs'];
+    const card = ([k, n, d, logo], on) => `<div class="panel" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><img src="https://xyrostudio.net/img/marca/logo-${logo}-app.svg" alt="" width="48" height="48" style="border-radius:12px"><div style="flex:1;min-width:180px"><b>${n}</b><p class="d" style="margin:2px 0 0">${d}</p></div>${on ? '<span class="st publicado">✅ Activo</span>' : `<button class="btn btn-y" data-xup="${k}">Lo quiero</button>`}</div>`;
+    const falta = XYROS.filter((x) => !act.includes(x[0]));
+    return title('Haz crecer tu negocio', 'Suma más herramientas de XyroStudio a tu gimnasio. Toca «Lo quiero» y te contactamos para activarlo.') +
+      (falta.length ? falta.map((x) => card(x, false)).join('') : '<div class="info">🎉 Ya tienes todo el ecosistema XyroStudio.</div>') +
+      `<h3 style="margin:18px 0 8px;font-size:.95rem">Lo que ya tienes</h3>` + XYROS.filter((x) => act.includes(x[0])).map((x) => card(x, true)).join('');
+  };
   V.guia = async () => {
     const G = {
       admin: [['Entra siempre por tu enlace privado', 'No está en la web pública. Guárdalo en favoritos y no lo compartas.'], ['Crea las cuentas del equipo', 'Usuarios → Nuevo usuario. El sistema da una clave temporal; la persona crea la suya al entrar.'], ['Edita la portada', 'Contenido de inicio: textos, barra animada, visión, números, encabezado de videos y redes.'], ['Precios y eventos', 'Planes y precios: para Black Friday u otro evento, pon el precio y la fecha final. Vuelve solo al precio normal.'], ['Sedes', 'Agrega o elimina sedes. Cada una con su WhatsApp, horario, foto y video de cómo llegar.'], ['Entrenadores', 'Cada entrenador tiene su página: foto, más fotos, presentación, logros y video.'], ['Clases y nutrición', 'Horario de clases y Asesoría nutricional: días, horas y profesor. Recepción también puede editarlos.'], ['Libro de reclamaciones', 'Responde cada reclamo antes de 15 días hábiles. El contador te avisa cuánto falta.'], ['Control', 'Si alguien deja el trabajo: Usuarios → Bloquear. En Actividad ves todo lo que se cambió.']],
@@ -436,6 +447,7 @@
     const d = el.dataset, list = DEF ? getP(data, DEF.key) : [];
     try {
       if (d.v) return go(d.v);
+      if (d.xup) { const x = XYROS.find((y) => y[0] === d.xup); log('pidió ' + x[1]); open('https://wa.me/51936449066?text=' + encodeURIComponent(`Hola XyroStudio, quiero sumar ${x[1]} a Santos Strength.`), '_blank', 'noopener'); return toast('Te contactamos pronto ✓'); }
       if ('logout' in d) return logout();
       if (el.id === 'menuBtn') return $('#side').classList.toggle('open');
       if ('clear' in d) { const w = el.previousElementSibling; $('input[type=hidden]', w).value = '[]'; $('.pv', w).innerHTML = ''; el.remove(); return; }
