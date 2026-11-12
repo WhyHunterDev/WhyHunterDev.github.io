@@ -304,16 +304,16 @@
     if (c.temaExtra) return ['navidad', 'halloween', 'anionuevo', 'fiestaspatrias', 'sanvalentin'];
     return [];
   }
-  function temaSec(c) {
+  async function temaSec(c) {
     const permitidos = temasPermitidosDe(c), cur = c.tema || '';
     const lista = TEMAS_UI.filter(([v]) => v === '' || permitidos.includes(v));
     const opts = lista.map(([v, n]) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${n}</option>`).join('');
-    return `<details class="panel"><summary>🎉 Tema de temporada</summary><p class="d">Dale a tu web un diseño especial por fechas (nieve, luces, colores) y escribe tu promoción. Cámbialo cuando quieras.</p>
+    const extra = (await Promise.all([['temaTitulo', 'Título de la tarjeta de promo', 'text', { max: 50, hint: 'Ej.: Regálate tu mejor versión. Vacío = título de la temporada.' }], ['temaPromo', 'Tu promoción', 'text', { max: 90, full: 1, hint: 'Ej.: 2×1 en inscripción solo diciembre. Sale en la cinta superior y en la tarjeta.' }], ['temaHasta', 'La promo termina el', 'date', { hint: 'Activa la cuenta regresiva. Vacío = fin de la temporada.' }], ['temaPopup', 'Mostrar tarjeta de promo al entrar', 'bool']].map((f) => field(c.temaPopup === undefined ? { ...c, temaPopup: true } : c, f)))).join('');
+    return `<details class="panel"><summary>🎉 Tema de temporada</summary><p class="d">Tu web se viste por temporada: efectos animados (nieve, fuegos artificiales, corazones), cinta con cuenta regresiva y una tarjeta de promo con botón directo a WhatsApp.</p>
       <div id="ctema" class="form">
-        <label>Temporada<select data-k="tema">${opts}</select></label>
-        <label class="full">Texto del banner de promoción<input data-k="temaPromo" maxlength="90" value="${esc(c.temaPromo || '')}" placeholder="Ej: 2×1 en inscripción solo diciembre"></label>
+        <label>Temporada<select data-k="tema">${opts}</select></label>${extra}
       </div>
-      <p class="hint" style="margin-top:4px">Déjalo en «Normal» para quitar el tema. El texto vacío usa el mensaje por defecto de cada temporada.</p>
+      <p class="hint" style="margin-top:4px">Déjalo en «Normal» para quitar el tema.</p>
       <button class="btn btn-y" data-savecfg="ctema" style="margin-top:14px">Guardar tema</button></details>`;
   }
   V.contenido = async () => {
@@ -328,7 +328,7 @@
       await blk('c7', '🔗 Redes sociales', 'Enlaces del pie de página.', c, [['redes.instagram', 'Instagram', 'url'], ['redes.tiktok', 'TikTok', 'url'], ['redes.facebook', 'Facebook', 'url']]) +
       await blk('c9', '⚖️ Datos legales', 'Salen en el Libro de Reclamaciones, la política de privacidad y los términos. Son obligatorios para cumplir la ley.', c, [['legal.razon', 'Razón social', 'text', { hint: 'Como figura en SUNAT. Ej.: Santos Strength S.A.C.' }], ['legal.ruc', 'RUC', 'text', { max: 11 }], ['legal.direccion', 'Dirección fiscal', 'text', { full: 1 }], ['legal.email', 'Correo para reclamos y datos personales', 'email']]) +
       await blk('c8', '🛡️ Aprobación', 'Si lo activas, lo que suban recepción y cafetín espera tu visto bueno antes de salir.', c, [['aprobacion', 'Revisar publicaciones antes de mostrarlas', 'bool']]) +
-      (temasPermitidosDe(c).length ? temaSec(c) : '');
+      (temasPermitidosDe(c).length ? await temaSec(c) : '');
   };
   V.planes = async () => title('Planes y precios', 'Para un descuento por evento, llena «Precio evento» y su fecha final. Al vencer vuelve al precio normal.') +
     (await Promise.all(data.planes.map(async (p, i) => `<div class="panel"><h3>${esc(p.nombre)}</h3>${await form(p, [['nombre', 'Nombre', 'text'], ['meses', 'Meses', 'num'], ['precio', 'Precio normal (S/)', 'num'], ['destacado', 'Recomendado', 'bool'], ['precioEvento', 'Precio evento (S/)', 'num'], ['eventoTexto', 'Nombre del evento', 'text', { hint: 'Ej.: Black Friday' }], ['eventoHasta', 'Evento hasta', 'date']], 'pl' + i)}<div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-y" data-saveplan="${i}">Guardar</button><button class="btn btn-bad btn-sm" data-delplan="${i}" style="margin-left:auto">Eliminar plan</button></div></div>`))).join('') +

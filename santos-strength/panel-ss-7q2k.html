@@ -140,7 +140,7 @@ th{color:var(--mu);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="backend/conexion.js?v=11"></script>
 <script src="js/store.js?v=13"></script>
-<script src="js/panel.js?v=24"></script>
+<script src="js/panel.js?v=25"></script>
 <style>.pw-wrap{position:relative;display:block}.pw-wrap input{width:100%;padding-right:2.6rem!important}.pw-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none!important;border:0;cursor:pointer;font-size:1rem;line-height:1;opacity:.75;padding:6px;box-shadow:none!important}.pw-eye:hover{opacity:1}</style>
 <script>/* Ojo para ver la contraseña */(function(){function ojos(){document.querySelectorAll('input[type=password]:not([data-ojo])').forEach(function(i){i.setAttribute('data-ojo','1');var w=document.createElement('span');w.className='pw-wrap';i.parentNode.insertBefore(w,i);w.appendChild(i);var b=document.createElement('button');b.type='button';b.className='pw-eye';b.textContent='👁';b.title='Mostrar contraseña';b.setAttribute('aria-label','Mostrar contraseña');b.addEventListener('click',function(e){e.preventDefault();var s=i.type==='password';i.type=s?'text':'password';b.textContent=s?'🙈':'👁';b.title=s?'Ocultar contraseña':'Mostrar contraseña';i.focus();});w.appendChild(b);});}ojos();new MutationObserver(ojos).observe(document.body,{childList:true,subtree:true});})();</script>
 </body>

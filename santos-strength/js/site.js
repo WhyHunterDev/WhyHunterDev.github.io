@@ -333,34 +333,150 @@
   };
   let galList = [], reelList = [];
 
-  // ---------- Temas de temporada ----------
+  // ---------- Temas de temporada PREMIUM ----------
   const TEMAS = {
-    navidad:        { promo: '🎄 Promo Navideña · 2×1 en inscripción, solo diciembre', n: 34, lights: true },
-    halloween:      { promo: '🎃 Reto Halloween · inscríbete y llévate 1 semana gratis', n: 30 },
-    anionuevo:      { promo: '🎆 Año Nuevo, nueva versión de ti · 20% en planes anuales', n: 30 },
-    fiestaspatrias: { promo: '🇵🇪 Fiestas Patrias · plan 3 meses al precio de 2', n: 28 },
-    sanvalentin:    { promo: '❤️ Plan Pareja · entrena en dúo y paga menos', n: 26 }
+    navidad:        { nom: 'Navidad', emo: '🎄', tag: 'Edición Navidad', titulo: 'Regálate tu mejor versión', promo: '2×1 en inscripción, solo diciembre', fx: 'nieve', cols: ['#ffffff', '#dff3ff'], hasta: '12-31', lights: true },
+    halloween:      { nom: 'Halloween', emo: '🎃', tag: 'Reto Halloween', titulo: 'Sin miedo al cambio', promo: 'Inscríbete y llévate 1 semana gratis', fx: 'brasas', cols: ['#ff8a1f', '#ffc078', '#b06bff'], hasta: '10-31' },
+    anionuevo:      { nom: 'Año Nuevo', emo: '🎆', tag: 'Año Nuevo', titulo: 'Año nuevo, nueva versión de ti', promo: '20% de descuento en planes anuales', fx: 'fuegos', cols: ['#f1c84b', '#ffe9a8', '#ffffff', '#ffb347'], hasta: '01-15' },
+    fiestaspatrias: { nom: 'Fiestas Patrias', emo: '🇵🇪', tag: 'Fiestas Patrias', titulo: 'Entrena con orgullo peruano', promo: 'Plan 3 meses al precio de 2', fx: 'fuegos', cols: ['#ff2a3d', '#ffffff', '#ff6b78'], hasta: '07-31' },
+    sanvalentin:    { nom: 'San Valentín', emo: '❤️', tag: 'Plan Pareja', titulo: 'Entrenar en dúo es mejor', promo: 'Inscríbete con tu pareja y paguen menos', fx: 'corazones', cols: ['#ff4d6d', '#ff8fa3', '#ffd1dc'], hasta: '02-14' }
   };
-  function applyTema() {
-    const t = (data.config.tema || '').toLowerCase(), cfg = TEMAS[t], root = document.documentElement;
-    root.dataset.tema = cfg ? t : '';
-    $('#temaDeco')?.remove(); $('#temaRibbon')?.remove(); $('#temaLights')?.remove(); $('#temaFall')?.remove(); $('#temaBadge')?.remove();
-    if (!cfg) { root.removeAttribute('data-ribbon'); return; }
-    const deco = document.createElement('div'); deco.id = 'temaDeco'; deco.setAttribute('aria-hidden', 'true');
-    let pt = '';
-    for (let i = 0; i < cfg.n; i++) {
-      const s = (7 + Math.random() * 16) | 0, x = ((Math.random() * 2 - 1) * 60) | 0, r = ((Math.random() * 2 - 1) * 220) | 0;
-      pt += `<span class="pt" style="left:${(Math.random() * 100).toFixed(1)}%;--s:${s}px;--d:${(8 + Math.random() * 9).toFixed(1)}s;--dl:${(Math.random() * 10).toFixed(1)}s;--xd:${x}px;--rd:${r}deg;--o:${(0.45 + Math.random() * 0.45).toFixed(2)}"></span>`;
+  const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let fxStop = null, cdTimer = 0;
+  // Fin de la promo: la fecha que pongan, o el fin de la temporada (cuenta regresiva solo si faltan ≤ 60 días)
+  const temaFin = (c, cfg) => {
+    const d = String(c.temaHasta || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) { const f = new Date(d + 'T23:59:59-05:00'); return f - Date.now() > 0 ? f : null; }
+    const y = new Date().getFullYear();
+    let f = new Date(`${y}-${cfg.hasta}T23:59:59-05:00`);
+    if (f < Date.now()) f = new Date(`${y + 1}-${cfg.hasta}T23:59:59-05:00`);
+    return f - Date.now() < 864e5 * 60 ? f : null;
+  };
+  const cdParts = (ms) => { const s = Math.max(0, ms / 1e3 | 0); return [s / 86400 | 0, (s % 86400) / 3600 | 0, (s % 3600) / 60 | 0, s % 60]; };
+  const p2 = (n) => String(n).padStart(2, '0');
+
+  // Motor de partículas en canvas: liviano, se pausa si la pestaña no se ve
+  function temaFx(kind, cols) {
+    const cv = document.createElement('canvas'); cv.id = 'temaFx'; cv.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(cv);
+    const cx = cv.getContext('2d'), dpr = Math.min(devicePixelRatio || 1, 1.5);
+    let W = 0, H = 0, mob = false, raf = 0, last = 0, t = 0, nextRocket = 0.6, nextBat = 3;
+    const P = [], S = [], B = [];
+    const R = (a, b) => a + Math.random() * (b - a), pick = (a) => a[(Math.random() * a.length) | 0];
+    const sprite = (col, soft) => { const s = document.createElement('canvas'); s.width = s.height = 64; const g = s.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, col); gr.addColorStop(soft ? 0.25 : 0.45, col); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return s; };
+    const heart = (col) => { const s = document.createElement('canvas'); s.width = s.height = 64; const g = s.getContext('2d'); g.shadowColor = col; g.shadowBlur = 14; g.fillStyle = col; g.beginPath(); g.moveTo(32, 52); g.bezierCurveTo(6, 36, 8, 12, 24, 12); g.bezierCurveTo(29, 12, 32, 16, 32, 19); g.bezierCurveTo(32, 16, 35, 12, 40, 12); g.bezierCurveTo(56, 12, 58, 36, 32, 52); g.fill(); return s; };
+    const SP = cols.map((c) => sprite(c)), SOFT = cols.map((c) => sprite(c, 1)), HE = kind === 'corazones' ? cols.map(heart) : null;
+    function size() { W = innerWidth; H = innerHeight; mob = W < 700; cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px'; cx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+    function seed() {
+      P.length = 0;
+      const n = kind === 'nieve' ? (mob ? 70 : 150) : kind === 'brasas' ? (mob ? 34 : 70) : kind === 'corazones' ? (mob ? 16 : 30) : (mob ? 18 : 36);
+      for (let i = 0; i < n; i++) P.push(mk(true));
     }
-    deco.innerHTML = `<div class="glow"></div>${pt}`;
-    document.body.appendChild(deco);
-    if (cfg.lights) { const lg = document.createElement('div'); lg.id = 'temaLights'; lg.setAttribute('aria-hidden', 'true'); document.body.appendChild(lg); }
+    function mk(init) {
+      const z = Math.random() ** 1.6;
+      if (kind === 'nieve') return { x: R(0, W), y: init ? R(-H, H) : R(-40, -10), z, r: 0.8 + z * 3.4, vy: 18 + z * 62, ph: R(0, 6.3), w: R(0.4, 1.3), sp: pick(z > 0.7 ? SOFT : SP) };
+      if (kind === 'brasas') return { x: R(0, W), y: init ? R(0, H) : H + 10, z, r: 0.8 + z * 2.6, vy: -(14 + z * 46), ph: R(0, 6.3), w: R(0.6, 1.8), sp: pick(SP), fl: R(2, 6) };
+      if (kind === 'corazones') return { x: R(0, W), y: init ? R(0, H) : H + 30, z, r: 7 + z * 15, vy: -(16 + z * 30), ph: R(0, 6.3), w: R(0.5, 1.2), sp: pick(HE), rot: R(-0.4, 0.4) };
+      return { x: R(0, W), y: init ? R(-H, H) : -10, z, r: 0.6 + z * 1.8, vy: 10 + z * 26, ph: R(0, 6.3), w: R(1, 3), sp: pick(SP), tw: 1 };
+    }
+    function burst(x, y, n, sp, big) {
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * 6.283 + R(-0.12, 0.12), v = big ? R(90, 260) : R(60, 170);
+        S.push({ x, y, px: x, py: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0, max: big ? R(1.1, 1.9) : R(0.6, 1.1), c: pick(cols), sp: sp || pick(SP), r: big ? R(1.2, 2.2) : R(1, 1.8) });
+      }
+    }
+    function rocket() { const x = R(W * 0.12, W * 0.88); B.push({ x, y: H + 5, vx: R(-20, 20), vy: -R(H * 0.85, H * 1.15), ty: R(H * 0.12, H * 0.42), c: pick(cols) }); }
+    function bat() { const dir = Math.random() < 0.5 ? 1 : -1; B.push({ bat: 1, x: dir > 0 ? -40 : W + 40, y: R(H * 0.08, H * 0.45), vx: dir * R(110, 190), ph: R(0, 6), s: R(0.7, 1.3) }); }
+    function drawBat(b) {
+      const f = Math.sin(t * 16 + b.ph) * 0.9, s = 14 * b.s;
+      cx.save(); cx.translate(b.x, b.y + Math.sin(t * 3 + b.ph) * 8); cx.scale(b.vx > 0 ? 1 : -1, 1); cx.fillStyle = 'rgba(10,4,18,.88)';
+      cx.beginPath(); cx.moveTo(0, 0); cx.quadraticCurveTo(-s * 0.7, -s * (0.4 + f), -s * 1.6, -s * (0.1 + f)); cx.quadraticCurveTo(-s, s * 0.05, -s * 0.9, s * 0.35); cx.quadraticCurveTo(-s * 0.4, s * 0.1, 0, s * 0.3);
+      cx.quadraticCurveTo(s * 0.4, s * 0.1, s * 0.9, s * 0.35); cx.quadraticCurveTo(s, s * 0.05, s * 1.6, -s * (0.1 + f)); cx.quadraticCurveTo(s * 0.7, -s * (0.4 + f), 0, 0); cx.fill(); cx.restore();
+    }
+    function frame(now) {
+      raf = requestAnimationFrame(frame);
+      const dt = Math.min(0.05, (now - (last || now)) / 1e3); last = now; t += dt;
+      cx.clearRect(0, 0, W, H);
+      cx.globalCompositeOperation = kind === 'brasas' || kind === 'fuegos' ? 'lighter' : 'source-over';
+      for (let i = 0; i < P.length; i++) {
+        const p = P[i];
+        p.y += p.vy * dt; p.x += Math.sin(t * p.w + p.ph) * (kind === 'nieve' ? 22 : 14) * dt * (0.4 + p.z);
+        if (p.y > H + 40 || p.y < -60) P[i] = mk(false);
+        let a = kind === 'nieve' ? 0.35 + p.z * 0.6 : kind === 'brasas' ? (0.35 + 0.65 * Math.abs(Math.sin(t * p.fl + p.ph))) * (p.y / H + 0.15) : kind === 'corazones' ? 0.35 + p.z * 0.5 : 0.25 + 0.75 * Math.abs(Math.sin(t * p.w + p.ph));
+        cx.globalAlpha = Math.min(1, a);
+        if (kind === 'corazones') { cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot + Math.sin(t + p.ph) * 0.25); cx.drawImage(p.sp, -p.r, -p.r, p.r * 2, p.r * 2); cx.restore(); }
+        else { const d = p.r * (kind === 'nieve' && p.z > 0.7 ? 5 : 4); cx.drawImage(p.sp, p.x - d / 2, p.y - d / 2, d, d); }
+      }
+      if (kind === 'fuegos') { nextRocket -= dt; if (nextRocket <= 0 && !document.hidden) { rocket(); nextRocket = mob ? R(1.6, 3) : R(0.9, 2.2); } }
+      if (kind === 'brasas') { nextBat -= dt; if (nextBat <= 0) { bat(); if (!mob && Math.random() < 0.4) setTimeout(bat, 350); nextBat = R(5, 11); } }
+      for (let i = B.length - 1; i >= 0; i--) {
+        const b = B[i];
+        if (b.bat) { b.x += b.vx * dt; cx.globalCompositeOperation = 'source-over'; cx.globalAlpha = 1; drawBat(b); cx.globalCompositeOperation = 'lighter'; if (b.x < -80 || b.x > W + 80) B.splice(i, 1); continue; }
+        b.x += b.vx * dt; b.y += b.vy * dt; b.vy += 240 * dt;
+        cx.globalAlpha = 0.9; cx.drawImage(SP[0], b.x - 5, b.y - 5, 10, 10);
+        cx.globalAlpha = 0.35; cx.drawImage(SP[0], b.x - 3, b.y + 6, 6, 18);
+        if (b.y <= b.ty || b.vy >= -20) { burst(b.x, b.y, mob ? 42 : 70, null, true); B.splice(i, 1); }
+      }
+      for (let i = S.length - 1; i >= 0; i--) {
+        const s = S[i]; s.life += dt; if (s.life > s.max) { S.splice(i, 1); continue; }
+        s.px = s.x; s.py = s.y; s.vx *= 1 - 1.6 * dt; s.vy = s.vy * (1 - 1.6 * dt) + 70 * dt; s.x += s.vx * dt; s.y += s.vy * dt;
+        const k = 1 - s.life / s.max; cx.globalAlpha = k * (0.6 + 0.4 * Math.random());
+        cx.strokeStyle = s.c; cx.lineWidth = s.r; cx.beginPath(); cx.moveTo(s.px, s.py); cx.lineTo(s.x, s.y); cx.stroke();
+        cx.drawImage(s.sp, s.x - s.r * 3, s.y - s.r * 3, s.r * 6, s.r * 6);
+      }
+      cx.globalAlpha = 1;
+    }
+    const tap = (e) => { if (e.target.closest('input,textarea,select,video,.player,#temaPop')) return; const n = mob ? 16 : 22; burst(e.clientX, e.clientY, n, HE ? null : null, false); };
+    const vis = () => { cancelAnimationFrame(raf); last = 0; if (!document.hidden) raf = requestAnimationFrame(frame); };
+    const rs = () => { size(); seed(); };
+    size(); seed(); raf = requestAnimationFrame(frame);
+    addEventListener('resize', rs); document.addEventListener('visibilitychange', vis); document.addEventListener('pointerdown', tap, { passive: true });
+    return () => { cancelAnimationFrame(raf); removeEventListener('resize', rs); document.removeEventListener('visibilitychange', vis); document.removeEventListener('pointerdown', tap); cv.remove(); };
+  }
+
+  function applyTema() {
+    const c = data.config, t = (c.tema || '').toLowerCase(), cfg = TEMAS[t], root = document.documentElement;
+    root.dataset.tema = cfg ? t : '';
+    ['#temaDeco', '#temaRibbon', '#temaLights', '#temaPop', '#temaBadge'].forEach((s) => $(s)?.remove());
+    if (fxStop) { fxStop(); fxStop = null; } clearInterval(cdTimer);
+    if (!cfg) { root.removeAttribute('data-ribbon'); root.style.removeProperty('--tema-tag'); return; }
+    root.style.setProperty('--tema-tag', JSON.stringify(cfg.emo + '  ' + cfg.tag.toUpperCase()));
+    root.style.setProperty('--tema-emo', JSON.stringify(cfg.emo));
+    const deco = document.createElement('div'); deco.id = 'temaDeco'; deco.setAttribute('aria-hidden', 'true');
+    deco.innerHTML = '<div class="glow"></div><div class="vig"></div>'; document.body.appendChild(deco);
+    if (!RM && !document.body.classList.contains('mant')) fxStop = temaFx(cfg.fx, cfg.cols);
+    if (cfg.lights) { const lg = document.createElement('div'); lg.id = 'temaLights'; lg.setAttribute('aria-hidden', 'true'); lg.innerHTML = Array.from({ length: 28 }, (_, i) => `<i style="--i:${i}"></i>`).join(''); document.body.appendChild(lg); }
+    const promo = (c.temaPromo || '').trim() || cfg.promo, titulo = (c.temaTitulo || '').trim() || cfg.titulo;
+    const fin = temaFin(c, cfg), vivo = !!fin;
+    const msg = `Vi la promo de ${cfg.nom} en la web (${promo}) y quiero aprovecharla.`;
     const rib = document.createElement('div'); rib.id = 'temaRibbon';
-    const promoTxt = (data.config.temaPromo || '').trim() || cfg.promo;
-    rib.innerHTML = `<b>${esc(promoTxt)}</b><button class="x" aria-label="Cerrar">×</button>`;
-    rib.querySelector('.x').addEventListener('click', () => { rib.remove(); root.removeAttribute('data-ribbon'); });
-    document.body.appendChild(rib);
-    root.setAttribute('data-ribbon', '');
+    rib.innerHTML = `<span class="em">${cfg.emo}</span><b>${esc(promo)}</b>${vivo ? '<span class="cd">Termina en <i data-tcd="s">--</i></span>' : ''}<button class="go" data-wa data-msg="${esc(msg)}">Lo quiero</button><button class="x" aria-label="Cerrar">×</button>`;
+    rib.querySelector('.x').addEventListener('click', (e) => { e.stopPropagation(); rib.remove(); root.removeAttribute('data-ribbon'); });
+    rib.addEventListener('click', (e) => { if (!e.target.closest('button')) temaPop(true); });
+    document.body.appendChild(rib); root.setAttribute('data-ribbon', '');
+    function temaPop(force) {
+      if ($('#temaPop') || document.body.classList.contains('mant')) return;
+      const key = 'ss-tpop-' + t + '-' + promo.length;
+      if (!force) { try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1'); } catch (_) {} }
+      const m = document.createElement('div'); m.id = 'temaPop'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); m.setAttribute('aria-label', cfg.tag);
+      m.innerHTML = `<div class="tp-card"><button class="x" aria-label="Cerrar">×</button>
+        <div class="tp-emo">${cfg.emo}</div><span class="tp-tag">${esc(cfg.tag)}</span>
+        <h2 class="tp-t">${esc(titulo)}</h2><p class="tp-p">${esc(promo)}</p>
+        ${vivo ? `<div class="tp-cd"><small>La promo termina en</small><div>${['Días', 'Horas', 'Min', 'Seg'].map((l, i) => `<span><b data-tcd="${i}">--</b><em>${l}</em></span>`).join('')}</div></div>` : ''}
+        <div class="tp-ctas"><button class="btn btn-y tp-go" data-wa data-msg="${esc(msg)}">${WA}Quiero la promo</button><a class="btn btn-o" href="#/planes">Ver planes</a></div>
+        <button class="tp-no">Ahora no</button></div>`;
+      const close = () => { m.classList.add('out'); setTimeout(() => m.remove(), 260); document.removeEventListener('keydown', esck); };
+      const esck = (e) => { if (e.key === 'Escape') close(); };
+      m.addEventListener('click', (e) => { if (e.target === m || e.target.closest('.x,.tp-no,a,.tp-go')) close(); });
+      document.addEventListener('keydown', esck);
+      document.body.appendChild(m); tick(); m.querySelector('.tp-go').focus({ preventScroll: true });
+    }
+    function tick() {
+      const [d, h, mi, s] = cdParts(fin - Date.now());
+      $$('[data-tcd]').forEach((el) => { const k = el.dataset.tcd; el.textContent = k === 's' ? (d ? `${d}d ${p2(h)}:${p2(mi)}:${p2(s)}` : `${p2(h)}:${p2(mi)}:${p2(s)}`) : p2([d, h, mi, s][k]); });
+    }
+    if (vivo) { tick(); cdTimer = setInterval(tick, 1000); }
+    if (c.temaPopup !== false) setTimeout(() => temaPop(false), 2200);
   }
 
   // ---------- Router ----------
@@ -422,8 +538,8 @@
   pl.addEventListener('touchend', (e) => { const d = e.changedTouches[0].clientX - tx; if (Math.abs(d) > 60 && plist.length > 1) openPlayer(plist, cur + (d < 0 ? 1 : -1)); });
 
   // ---------- WhatsApp ----------
-  function openSheet(plan) {
-    const txt = (s) => `Hola Santos Strength ${s.nombre} 👋 ` + (plan ? `Me interesa el plan ${plan}.` : 'Quiero información para inscribirme.');
+  function openSheet(plan, msg) {
+    const txt = (s) => `Hola Santos Strength ${s.nombre} 👋 ` + (msg || (plan ? `Me interesa el plan ${plan}.` : 'Quiero información para inscribirme.'));
     if (sede !== 'todas' && sedeObj(sede)) { window.open(SS.waLink(sedeObj(sede).whatsapp, txt(sedeObj(sede))), '_blank', 'noopener'); return; }
     $('#sheetOpts').innerHTML = '<div class="bubble">¡Hola! 💪 ¿A qué sede quieres escribir?</div>' + data.sedes.map((s) => `<a class="opt" target="_blank" rel="noopener" href="${SS.waLink(s.whatsapp, txt(s))}" data-pick="${s.id}"><span>Sede ${esc(s.nombre)}<small>${esc(s.distrito)}</small></span><span style="color:var(--wa)">${WA.replace('<svg', '<svg width="22" height="22"')}</span></a>`).join('');
     $('#sheet').classList.add('on');
@@ -438,7 +554,7 @@
     if ((el = t('[data-geono]'))) { $('#geoAsk')?.remove(); return; }
     if ((el = t('[data-sede]'))) { $('.sedemenu')?.remove(); setSede(el.dataset.sede); return; }
     if ((el = t('[data-pick]'))) { $('#sheet').classList.remove('on'); setTimeout(() => setSede(el.dataset.pick), 300); return; }
-    if ((el = t('[data-wa]'))) { e.preventDefault(); openSheet(el.dataset.plan); return; }
+    if ((el = t('[data-wa]'))) { e.preventDefault(); openSheet(el.dataset.plan, el.dataset.msg); return; }
     if ((el = t('[data-goal]'))) { renderQuiz(el.dataset.goal); return; }
     if ((el = t('[data-ctipo]'))) { claseTipo = el.dataset.ctipo; render(true); return; }
     if ((el = t('[data-clase]'))) { const k = (data.clases || []).find((x) => x.id === el.dataset.clase); if (k) { const s = (k.sede && k.sede !== 'todas' && sedeObj(k.sede)) || waSede(), dn = (DIAS_W.find((x) => x[0] === el.dataset.dia) || [, ''])[1]; open(SS.waLink(s.whatsapp, `Hola Santos Strength 👋 Quiero separar mi cupo en la clase de ${k.nombre} del ${dn.toLowerCase()} a las ${hora12(k.hora)} (sede ${s.nombre}).`), '_blank', 'noopener'); } return; }
