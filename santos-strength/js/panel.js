@@ -132,7 +132,7 @@
   // ---------- Sesión y seguridad ----------
   const lockGet = () => { try { return JSON.parse(localStorage.getItem('ss-lock') || '{}'); } catch (_) { return {}; } };
   const lockSet = (o) => { try { localStorage.setItem('ss-lock', JSON.stringify(o)); } catch (_) {} };
-  const asMe = (perfil, email) => ({ id: perfil.id, nombre: perfil.nombre || 'Usuario', email, rol: perfil.rol === 'gestor' ? 'admin' : perfil.rol, sede: perfil.sede || 'todas', gestor: perfil.rol === 'gestor', debeCambiar: !!perfil.debe_cambiar && perfil.rol !== 'gestor' });
+  const asMe = (perfil, email) => ({ id: perfil.id, nombre: perfil.nombre || 'Usuario', email, rol: perfil.rol === 'gestor' ? 'admin' : perfil.rol === 'supervisor' ? 'recepcion' : perfil.rol, sede: perfil.sede || 'todas', gestor: perfil.rol === 'gestor', debeCambiar: !!perfil.debe_cambiar && perfil.rol !== 'gestor' });
   $('#loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const em = $('#em').value.trim().toLowerCase(), pw = $('#pw').value, err = $('#err');
@@ -172,7 +172,7 @@
     if (w) { try { w.opener = null; } catch (_) {} w.location.href = url; } else location.href = url;
     log('abrió Xyro Apps');
   }
-  async function logout(msg) { if (B()) { try { await B().auth.salir(); } catch (_) {} } sessionStorage.removeItem('ss-ses'); me = null; $('#app').style.display = 'none'; $('#login').style.display = ''; if (msg) { $('#err').textContent = msg; $('#err').hidden = false; } }
+  async function logout(msg) { if (B()) { try { await B().auth.salir(); } catch (_) {} } sessionStorage.removeItem('ss-ses'); me = null; $('#app').style.display = 'none'; $('#login').style.display = ''; if (msg && $('#err')) { $('#err').textContent = msg; $('#err').hidden = false; } }
   // Recuperación de contraseña por correo (solo en modo nube).
   const forgotBtn = $('#forgotLink');
   if (forgotBtn) { if (!B()) forgotBtn.hidden = true; else { forgotBtn.addEventListener('click', () => { const fb = $('#forgotBox'); fb.hidden = !fb.hidden; $('#err').hidden = true; $('#okm').hidden = true; });
@@ -197,7 +197,7 @@
     const pend = isAdmin() ? data.publicaciones.filter((p) => p.estado === 'pendiente').length + data.galeria.filter((g) => g.estado === 'pendiente').length : 0;
     $('#side').innerHTML = `<div class="brand disp"><img src="img/logo-sm.webp" alt=""><span>Santos <b>Panel</b></span></div>` +
       NAV.map(([g, it]) => { const v = it.filter((i) => can(i[3])); return v.length ? `<div class="grp">${g}</div>` + v.map(([id, ic, n]) => `<button class="nv ${id === view ? 'on' : ''}" data-v="${id}">${ic} ${n}${id === 'resumen' && pend ? `<span class="ct">${pend}</span>` : ''}</button>`).join('') : ''; }).join('') +
-      `${((data.config && data.config.xyros) || []).includes('apps') && ['admin', 'recepcion', 'cafetin'].includes(me.rol) ? '<button class="nv" data-xapps>📱 Abrir Xyro Apps ↗</button>' : ''}<a class="nv" href="index.html" target="_blank" rel="noopener">🌐 Ver página web</a>
+      `${((data.config && data.config.xyros) || []).includes('apps') && ['admin', 'recepcion', 'cafetin'].includes(me.rol) ? '<button class="nv" data-xapps>📱 Volver a Xyro Apps ↗</button>' : ''}<a class="nv" href="index.html" target="_blank" rel="noopener">🌐 Ver página web</a>
       <div class="me"><b>${esc(me.nombre)}</b><small>${esc(me.gestor ? 'Gestor (agencia)' : rolLabel[me.rol])} · ${esc(sedeName(me.sede))}</small><button class="btn btn-g btn-sm" data-logout style="margin-top:10px;width:100%">Cerrar sesión</button></div>`;
   }
   async function go(v) {
@@ -526,6 +526,12 @@
       const perfil = await B().auth.actual();
       if (perfil && perfil.activo) { const { data: au } = await B().sb.auth.getUser(); me = asMe(perfil, au.user?.email || ''); data = await SS.load(); data.actividad = data.actividad || []; start(); }
     } catch (_) {}
+    // Con Xyro Apps activo, este panel no tiene login propio: se entra desde «Mi web» de Xyro Apps, ya con la sesión.
+    if (!me && ((data.config && data.config.xyros) || []).includes('apps')) {
+      const xa = 'https://xyrostudio.net/app/?s=' + encodeURIComponent(B().sitio);
+      $('#loginForm').innerHTML = `<img src="img/logo.png" alt=""><div><h1 class="disp" style="font-size:1.9rem">Tu web</h1><p style="color:var(--mu);font-size:.92rem;line-height:1.5">Tu página se edita desde <b>Xyro Apps</b>. Entra ahí y toca <b>🌐 Mi web</b>: se abre ya con tu sesión, sin volver a ingresar.</p></div><a class="btn btn-y" href="${xa}" style="text-align:center">Ir a Xyro Apps</a>`;
+      $('#loginForm').onsubmit = (e) => e.preventDefault();
+    }
   } else {
     try {
       const s = JSON.parse(sessionStorage.getItem('ss-ses') || 'null');

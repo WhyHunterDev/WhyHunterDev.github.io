@@ -69,7 +69,7 @@
     async actual() {
       // Entrada con un clic desde Xyro Apps: #xa=CODIGO de un solo uso (SQL 21) → sesión propia de este panel.
       const xa = /^#xa=([a-f0-9]{32,128})$/.exec(location.hash);
-      if (xa) { history.replaceState(null, '', location.pathname + location.search); try { const { data: tk } = await sb.rpc('xa_canje', { p_code: xa[1] }); if (tk) await sb.auth.refreshSession({ refresh_token: tk }); } catch (_) {} }
+      if (xa) { history.replaceState(null, '', location.pathname + location.search); try { const { data: tk, error: e1 } = await sb.rpc('xa_canje', { p_code: xa[1] }); if (e1) throw e1; if (!tk) throw new Error('pase vencido o usado'); const { error: e2 } = await sb.auth.refreshSession({ refresh_token: tk }); if (e2) throw e2; } catch (er) { reportarError('Entrada desde Xyro Apps: ' + (er && er.message || er)); } }
       const { data } = await sb.auth.getUser();
       if (!data.user) return null;
       return (await sb.from('perfiles').select('*').eq('id', data.user.id).single()).data;
