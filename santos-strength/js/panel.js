@@ -5,6 +5,8 @@
   const U = (r) => SS.mediaUrl(r);
   const B = () => window.SS_BACKEND;                 // nube (Supabase) si está configurada
   let data = await SS.load(), me = null, view = 'resumen', editing = null, gpage = 1;
+  // Con Xyro Apps, la web se edita dentro de Xyro (xyrostudio.net/app/web) con la misma sesión: este panel ya no tiene login propio.
+  if (window.SS_BACKEND && ((data.config && data.config.xyros) || []).includes('apps')) { location.replace('https://xyrostudio.net/app/web/?s=' + encodeURIComponent(window.SS_BACKEND.sitio)); return; }
   data.actividad = data.actividad || [];
   const IDLE_MIN = 60, MAX_TRY = 5, LOCK_MIN = 5;
   const rolLabel = { admin: 'Administrador', recepcion: 'Recepción', cafetin: 'Cafetín', gestor: 'Gestor' };
@@ -526,12 +528,6 @@
       const perfil = await B().auth.actual();
       if (perfil && perfil.activo) { const { data: au } = await B().sb.auth.getUser(); me = asMe(perfil, au.user?.email || ''); data = await SS.load(); data.actividad = data.actividad || []; start(); }
     } catch (_) {}
-    // Con Xyro Apps activo, este panel no tiene login propio: se entra desde «Mi web» de Xyro Apps, ya con la sesión.
-    if (!me && ((data.config && data.config.xyros) || []).includes('apps')) {
-      const xa = 'https://xyrostudio.net/app/?s=' + encodeURIComponent(B().sitio);
-      $('#loginForm').innerHTML = `<img src="img/logo.png" alt=""><div><h1 class="disp" style="font-size:1.9rem">Tu web</h1><p style="color:var(--mu);font-size:.92rem;line-height:1.5">Tu página se edita desde <b>Xyro Apps</b>. Entra ahí y toca <b>🌐 Mi web</b>: se abre ya con tu sesión, sin volver a ingresar.</p></div><a class="btn btn-y" href="${xa}" style="text-align:center">Ir a Xyro Apps</a>`;
-      $('#loginForm').onsubmit = (e) => e.preventDefault();
-    }
   } else {
     try {
       const s = JSON.parse(sessionStorage.getItem('ss-ses') || 'null');
