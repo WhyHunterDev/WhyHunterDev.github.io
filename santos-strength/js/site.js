@@ -296,6 +296,11 @@
       <div class="cafe-hero"><img src="${esc(await U(cf.imagen))}" alt="">
         <div><span class="eyebrow">Cafetín fit · ${esc(sede === 'todas' ? 'todas las sedes' : 'sede ' + sedeName(sede))}</span><h1 class="h1">${esc(cf.titulo)} <em>${esc(cf.acento)}</em></h1><p class="lead" style="color:#ddd">${esc(cf.texto)}</p>${cafeBadge}</div></div>
       ${sedeChips()}
+      <div class="mesa-app rv"><div class="ma-ph" aria-hidden="true"><div class="ma-qr"><i></i><i></i><i></i><i></i></div><span>Mesa 4</span></div>
+        <div class="ma-tx"><span class="eyebrow">Nuevo · Pide desde tu mesa</span><h2 class="h2" style="font-size:clamp(1.7rem,4vw,2.4rem);margin:.5rem 0 .4rem">Escanea, pide y <em>te lo llevamos</em></h2>
+        <p style="color:#cfcabf">En cada mesa del cafetín hay un código QR. Escanéalo con la cámara de tu celular o con la app <b>Mi Xyro</b>, elige tus batidos, platos o combos y haz tu pedido sin hacer cola. Pagas al terminar.</p>
+        <ol class="ma-st"><li><b>1</b>Escanea el QR de tu mesa</li><li><b>2</b>Elige y haz tu pedido</li><li><b>3</b>Te avisamos cuando va a tu mesa</li></ol>
+        <a class="btn btn-y" href="https://xyrostudio.net/mi/" target="_blank" rel="noopener">📱 Abrir la app Mi Xyro</a></div></div>
       ${combos.length ? `<h2 class="h2" style="font-size:2rem;margin-top:2.6rem">Combos <em>del momento</em></h2><div class="combos">${(await Promise.all(combos.map(async (c) => `<button class="combo rv" data-combo="${c.id}"><div class="ci">${c.foto ? `<img src="${esc(await U(c.foto))}" alt="" loading="lazy">` : ''}</div><div><small>Combo${c.hasta ? ' · hasta ' + fmt(c.hasta) : ''}</small><h4>${esc(c.nombre)}</h4><p>${esc(c.incluye)}</p></div><div class="cp">${c.precioAntes ? `<s>${soles(c.precioAntes)}</s>` : ''}<b>${soles(c.precio)}</b><span class="cpedir">Pedir →</span></div></button>`))).join('')}</div>` : ''}
       <div class="row-hd" style="margin-top:2.6rem"><h2 class="h2" style="font-size:2rem;margin:0">Nuestro <em>menú</em></h2><div class="chips">${cats.map((c) => `<button class="chip ${c === cat ? 'on' : ''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('')}</div></div>
       <div class="menu">${(await Promise.all(vis.map(async (i) => `<button class="mcard rv ${i.disponible ? '' : 'off'}" data-item="${i.id}">

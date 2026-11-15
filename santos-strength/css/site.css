@@ -587,3 +587,19 @@ button.combo:hover{transform:translateY(-2px);box-shadow:0 14px 30px -14px rgba(
 /* portada: que el título no choque con el menú en laptops de poca altura */
 @media(min-width:901px){.hero{padding-top:calc(var(--nav) + 24px)}.hero h1{font-size:clamp(4rem,min(14vw,19vh),11.5rem)}}
 @media(min-width:901px){html[data-ribbon] .hero{padding-top:calc(var(--nav) + var(--rh,40px) + 24px)}html[data-ribbon] .hero h1{font-size:clamp(4rem,min(14vw,16.5vh),11.5rem)}}
+
+/* Pide desde tu mesa (QR + app Mi Xyro) */
+.mesa-app{display:grid;grid-template-columns:auto 1fr;gap:clamp(18px,4vw,40px);align-items:center;margin-top:2.2rem;padding:clamp(20px,4vw,34px);border-radius:28px;background:radial-gradient(120% 140% at 0% 0%,rgba(245,196,0,.16),transparent 55%),var(--card);border:1px solid var(--line2);position:relative;overflow:hidden}
+.ma-ph{width:128px;aspect-ratio:9/17;border-radius:24px;background:#000;border:2px solid var(--line2);display:grid;place-items:center;align-content:center;gap:10px;box-shadow:0 30px 60px -30px rgba(245,196,0,.5);animation:maFl 4s ease-in-out infinite}
+.ma-ph span{font:700 .62rem/1 var(--fb);letter-spacing:.22em;text-transform:uppercase;color:var(--y)}
+.ma-qr{width:78px;height:78px;border-radius:12px;background:#fff;position:relative;overflow:hidden}
+.ma-qr i{position:absolute;width:24px;height:24px;border:5px solid #000;border-radius:5px}
+.ma-qr i:nth-child(1){top:6px;left:6px}.ma-qr i:nth-child(2){top:6px;right:6px}.ma-qr i:nth-child(3){bottom:6px;left:6px}
+.ma-qr i:nth-child(4){width:16px;height:16px;border:0;background:var(--y);bottom:10px;right:10px;border-radius:3px}
+.ma-qr::after{content:"";position:absolute;left:0;right:0;height:2px;background:var(--y);box-shadow:0 0 10px var(--y);animation:maSc 2.2s ease-in-out infinite}
+.ma-st{list-style:none;display:flex;flex-wrap:wrap;gap:.5rem;margin:1rem 0 1.2rem}
+.ma-st li{display:flex;align-items:center;gap:.5rem;padding:.45rem .8rem .45rem .45rem;border-radius:999px;background:var(--card2);border:1px solid var(--line);font-size:.85rem;font-weight:600}
+.ma-st b{width:24px;height:24px;border-radius:50%;background:var(--y);color:#000;display:grid;place-items:center;font-size:.75rem}
+@keyframes maFl{50%{transform:translateY(-8px) rotate(-2deg)}}@keyframes maSc{0%,100%{top:4%}50%{top:94%}}
+@media(max-width:640px){.mesa-app{grid-template-columns:1fr}.ma-ph{width:104px;margin:0 auto}.mesa-app .btn{width:100%}}
+@media(prefers-reduced-motion:reduce){.ma-ph,.ma-qr::after{animation:none}}
