@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>Abriendo…</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#000;color:#ddd;font:15px system-ui,sans-serif;text-align:center}a{color:#a99bff}</style></head>
+<body><p>Abriendo la web…<br><a id="l" href="https://xyrostudio.net/">Toca aquí si no abre</a></p>
+<script>
+/* Puente de Mi Xyro: abre la web de un negocio fuera de la app (en el navegador del celular). Solo envía a xyrostudio.net o a webs https conocidas. */
+(function(){var u=new URLSearchParams(location.search).get('u')||'';
+ if(!/^https:\/\/[a-z0-9.-]+\.[a-z]{2,}(\/|$)/i.test(u))u='https://xyrostudio.net/';
+ document.getElementById('l').href=u;location.replace(u)})();
+</script></body></html>
